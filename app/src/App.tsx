@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 import {InferenceClientImpl} from './inference';
 
 type Status = 'idle' | 'connecting' | 'streaming' | 'error';
@@ -71,7 +72,7 @@ export default function App() {
           style={styles.responseArea}
           contentContainerStyle={styles.responseContent}>
           {response ? (
-            <Text style={styles.responseText}>{response}</Text>
+            <Markdown style={markdownStyles}>{response}</Markdown>
           ) : (
             <Text style={styles.placeholder}>
               {status === 'connecting'
@@ -178,4 +179,42 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: {backgroundColor: '#1a4a6e'},
   sendBtnText: {color: '#fff', fontWeight: '600', fontSize: 15},
+});
+
+const markdownStyles = StyleSheet.create({
+  body: {color: '#e0e0e0', fontSize: 15, lineHeight: 22},
+  heading1: {color: '#fff', fontSize: 22, fontWeight: '700', marginVertical: 8},
+  heading2: {color: '#fff', fontSize: 19, fontWeight: '700', marginVertical: 6},
+  heading3: {color: '#fff', fontSize: 16, fontWeight: '600', marginVertical: 4},
+  strong: {color: '#fff', fontWeight: '700'},
+  em: {fontStyle: 'italic'},
+  code_inline: {
+    backgroundColor: '#1e1e1e',
+    color: '#ce9178',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: 13,
+    borderRadius: 4,
+    paddingHorizontal: 4,
+  },
+  fence: {
+    backgroundColor: '#1e1e1e',
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+    color: '#ce9178',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: 13,
+  },
+  blockquote: {
+    backgroundColor: '#1a1a1a',
+    borderLeftColor: '#2196f3',
+    borderLeftWidth: 3,
+    paddingLeft: 12,
+    marginVertical: 4,
+  },
+  bullet_list: {marginVertical: 4},
+  ordered_list: {marginVertical: 4},
+  list_item: {marginVertical: 2},
+  hr: {backgroundColor: '#333', height: 1, marginVertical: 12},
+  link: {color: '#64b5f6'},
 });
