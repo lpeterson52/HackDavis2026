@@ -8,9 +8,13 @@ HackDavis2026/
 └── app/      ← Bare React Native app
 ```
 
+> **iOS note:** iOS builds require a Mac with Xcode. Windows can only target Android.
+
 ---
 
 ## Prerequisites
+
+### Mac
 
 | Tool | Install |
 |------|---------|
@@ -21,27 +25,45 @@ HackDavis2026/
 | Xcode (iOS) | Mac App Store |
 | Android Studio (Android) | [developer.android.com](https://developer.android.com/studio) |
 
+### Windows
+
+| Tool | Install |
+|------|---------|
+| [Ollama](https://ollama.com) | Download installer from [ollama.com](https://ollama.com) or `winget install Ollama.Ollama` |
+| Python 3.10+ | [python.org](https://www.python.org/downloads/) or `winget install Python.Python.3.11` |
+| Node.js 18+ | [nodejs.org](https://nodejs.org) or `winget install OpenJS.NodeJS` |
+| JDK 17 | `winget install Microsoft.OpenJDK.17` |
+| Android Studio | [developer.android.com](https://developer.android.com/studio) |
+
+> Watchman is optional on Windows. iOS/Xcode is not available.
+
 ---
 
 ## Ollama Setup
 
-Ollama manages downloading and running local models. It must be installed and running before the inference server starts.
+Ollama manages downloading and running local models. It must be running before the inference server starts.
 
 ### Install
 
+#### Mac
 ```bash
 brew install ollama
 ```
-
 Or download the Mac app from [ollama.com](https://ollama.com).
+
+#### Windows
+Download and run the installer from [ollama.com](https://ollama.com). Ollama installs as a background service and adds itself to the system tray — no manual `ollama serve` needed after installation.
+
+---
 
 ### Start the Ollama daemon
 
+#### Mac
 ```bash
 ollama serve
 ```
 
-By default Ollama only listens on `localhost`. To allow connections from a physical device on your LAN (or from the FastAPI server when testing remotely), set these environment variables before running `ollama serve`:
+To allow connections from a physical device on your LAN, set these before running `ollama serve`:
 
 ```bash
 export OLLAMA_HOST=0.0.0.0
@@ -49,9 +71,31 @@ export OLLAMA_ORIGINS=*
 ollama serve
 ```
 
-To make these permanent, add them to your shell profile (`~/.zshrc` or `~/.bash_profile`).
+To make these permanent, add them to `~/.zshrc` or `~/.bash_profile`.
+
+#### Windows
+Ollama starts automatically as a Windows service. To allow LAN connections, set the environment variables permanently via PowerShell (run as Administrator):
+
+```powershell
+[Environment]::SetEnvironmentVariable("OLLAMA_HOST", "0.0.0.0", "Machine")
+[Environment]::SetEnvironmentVariable("OLLAMA_ORIGINS", "*", "Machine")
+```
+
+Then restart the Ollama service from the system tray (right-click → Quit, then relaunch).
+
+To set them only for the current session:
+
+```powershell
+$env:OLLAMA_HOST = "0.0.0.0"
+$env:OLLAMA_ORIGINS = "*"
+ollama serve
+```
+
+---
 
 ### Pull the Gemma 4 model
+
+The command is the same on both platforms:
 
 ```bash
 ollama pull gemma4:e2b-it-q4_K_M   # 7.2 GB — instruction-tuned, smallest available
@@ -72,8 +116,8 @@ Available e2b variants (no sub-7 GB option exists — all e2b tags are 7 GB+):
 ### Verify Ollama is working
 
 ```bash
-ollama list                                       # should show gemma4:e2b-it-q4_K_M
-ollama run gemma4:e2b-it-q4_K_M "Say hi"         # quick smoke test
+ollama list                                    # should show gemma4:e2b-it-q4_K_M
+ollama run gemma4:e2b-it-q4_K_M "Say hi"      # quick smoke test
 ```
 
 ### Useful Ollama commands
@@ -81,40 +125,48 @@ ollama run gemma4:e2b-it-q4_K_M "Say hi"         # quick smoke test
 ```bash
 ollama list          # show downloaded models
 ollama ps            # show currently loaded models
-ollama rm gemma4:e2b # remove a model to free disk space
-ollama stop          # shut down the daemon
+ollama rm gemma4:e2b-it-q4_K_M   # remove a model to free disk space
+ollama stop          # shut down the daemon (Mac only)
 ```
 
 ---
 
 ## Part 1 — Inference Server
 
-The server runs on your Mac and proxies requests to Ollama. The React Native app talks to it over localhost (simulator) or your LAN IP (physical device).
+The server runs on your machine and proxies requests to Ollama. The React Native app connects over localhost (emulator) or your LAN IP (physical device).
 
 ### First-time setup
 
+#### Mac
 ```bash
 cd server
-pip3 install -r requirements.txt
+./start.sh   # creates .venv, installs deps, starts uvicorn
 ```
 
-### Pull the model (~3 GB, one time only)
-
-```bash
-ollama pull gemma4:e2b
+#### Windows
+```powershell
+cd server
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
 ### Start the server
 
+#### Mac
 ```bash
-# Option A — convenience script (handles Ollama + model check automatically)
 cd server
 ./start.sh
+```
 
-# Option B — manually
-ollama serve &          # start Ollama if not already running
+#### Windows
+```powershell
+cd server
+.venv\Scripts\activate
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+> On Windows, `start.sh` requires Git Bash or WSL to run. The manual steps above are recommended instead.
 
 ### Verify it's working
 
@@ -124,14 +176,16 @@ curl http://localhost:8000/health
 
 # Streaming test (tokens print as they arrive)
 curl -X POST http://localhost:8000/generate \
-  -H 'Content-Type: application/json' \
-  -d '{"prompt": "Say hello in one sentence."}' \
+  -H "Content-Type: application/json" \
+  -d "{\"prompt\": \"Say hello in one sentence.\"}" \
   --no-buffer
 ```
 
+> `curl` is available in Windows 10+ via Command Prompt and PowerShell. Use double quotes and escape inner quotes as shown above.
+
 Expected health response:
 ```json
-{"status": "ok", "model": "gemma4:e2b"}
+{"status": "ok", "model": "gemma4:e2b-it-q4_K_M"}
 ```
 
 Expected streaming output (one JSON object per line):
@@ -150,8 +204,10 @@ Expected streaming output (one JSON object per line):
 ```bash
 cd app
 npm install
+```
 
-# iOS only
+#### Mac — iOS only
+```bash
 cd ios && pod install && cd ..
 ```
 
@@ -160,17 +216,26 @@ cd ios && pod install && cd ..
 Open `app/src/inference/OllamaClient.ts` and set `SERVER_URL`:
 
 ```ts
-// iOS Simulator — localhost works
+// Emulator (both platforms) — localhost works
 const SERVER_URL = 'http://localhost:8000';
 
-// Physical device or Android emulator — use your Mac's LAN IP
-// Find it with: ipconfig getifaddr en0
+// Physical device — use your machine's LAN IP
 const SERVER_URL = 'http://192.168.x.x:8000';
 ```
 
-> **Tip:** Run `ipconfig getifaddr en0` on your Mac to find its LAN IP.
+#### Find your LAN IP
 
-### Run on iOS Simulator
+**Mac:**
+```bash
+ipconfig getifaddr en0
+```
+
+**Windows:**
+```powershell
+ipconfig   # look for "IPv4 Address" under your active adapter
+```
+
+### Run on iOS Simulator (Mac only)
 
 ```bash
 cd app
@@ -195,19 +260,19 @@ npx react-native start
 
 ## Physical Device — Extra Steps
 
-### iOS
+### iOS (Mac only)
 
 1. Open `app/ios/*.xcworkspace` in Xcode
 2. Set your Apple ID under **Signing & Capabilities**
 3. Select your device and press **Run**
-4. Set `SERVER_URL` to your Mac's LAN IP (see above)
+4. Set `SERVER_URL` to your Mac's LAN IP
 
-### Android
+### Android (Mac or Windows)
 
 1. Enable **Developer Options** and **USB Debugging** on the phone
 2. Connect via USB
 3. Run `npx react-native run-android`
-4. Set `SERVER_URL` to your Mac's LAN IP
+4. Set `SERVER_URL` to your machine's LAN IP
 
 ---
 
@@ -219,7 +284,7 @@ The entire inference stack (Ollama + Gemma 4) runs locally. To confirm it works 
 2. Disconnect from Wi-Fi / pull the ethernet
 3. Send a prompt from the app — it should still respond
 
-The only network call is the initial `ollama pull gemma4:e2b` to download the model.
+The only network call is the initial `ollama pull gemma4:e2b-it-q4_K_M` to download the model.
 
 ---
 
@@ -230,7 +295,7 @@ When ready to run fully on-device with LiteRT-LM (no server needed):
 1. Install the native module:
    ```bash
    cd app && npm install react-native-litert-lm
-   cd ios && pod install
+   cd ios && pod install   # Mac/iOS only
    ```
 
 2. Download the model from HuggingFace:
@@ -254,10 +319,17 @@ When ready to run fully on-device with LiteRT-LM (no server needed):
 
 ## Troubleshooting
 
-**`Cannot reach Ollama`** — Run `ollama serve` before starting the FastAPI server.
+**`Cannot reach Ollama`** — On Mac, run `ollama serve`. On Windows, check the system tray to confirm Ollama is running.
 
-**`Network request failed` in the app** — Check `SERVER_URL` in `OllamaClient.ts`. On a physical device it must be the Mac's LAN IP, not `localhost`.
-
-**iOS build fails with pod errors** — Run `cd ios && pod install --repo-update`.
+**`Network request failed` in the app** — Check `SERVER_URL` in `OllamaClient.ts`. On a physical device it must be the machine's LAN IP, not `localhost`.
 
 **Android emulator can't reach server** — Use `http://10.0.2.2:8000` instead of `localhost` (Android maps `10.0.2.2` to the host machine).
+
+**iOS build fails with pod errors** — Run `cd ios && pod install --repo-update` (Mac only).
+
+**Windows: `.venv\Scripts\activate` is blocked** — PowerShell execution policy may be restricting scripts. Run:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+**Windows: `python` not found** — Ensure Python was added to PATH during install. Re-run the installer and check "Add Python to PATH", or use `py` instead of `python`.
