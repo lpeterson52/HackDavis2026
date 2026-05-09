@@ -1,0 +1,21 @@
+.claude
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# React Native
+app/node_modules/
+app/android/.gradle/
+app/android/app/build/
+app/ios/Pods/
+app/ios/build/
+app/*.jks
+app/*.keystore
+
+# OS
+.DS_Store
