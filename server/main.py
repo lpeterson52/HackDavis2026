@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 OLLAMA_BASE = "http://localhost:11434"
-MODEL = "gemma4:e2b"
+MODEL = "gemma4:e2b-it-q4_K_M"
 
 app = FastAPI()
 

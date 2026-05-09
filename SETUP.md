@@ -54,22 +54,26 @@ To make these permanent, add them to your shell profile (`~/.zshrc` or `~/.bash_
 ### Pull the Gemma 4 model
 
 ```bash
-ollama pull gemma4:e2b   # ~3 GB, edge 2B variant — download once
+ollama pull gemma4:e2b-it-q4_K_M   # 7.2 GB — instruction-tuned, smallest available
 ```
 
-Other available sizes if you have more RAM/VRAM:
+Available e2b variants (no sub-7 GB option exists — all e2b tags are 7 GB+):
 
-| Tag | Params | Notes |
-|-----|--------|-------|
-| `gemma4:e2b` | 2B | Recommended for development |
-| `gemma4:e4b` | 4B | Better quality, ~6 GB |
-| `gemma4` | 12B | Full model, needs 16 GB+ RAM |
+| Tag | Size | Notes |
+|-----|------|-------|
+| `gemma4:e2b-it-q4_K_M` | 7.2 GB | **Recommended** — smallest, instruction-tuned, multimodal |
+| `gemma4:e2b-it-q8_0` | 8.1 GB | Higher quality, larger |
+| `gemma4:e2b-it-bf16` | 10 GB | Full precision, only useful for fine-tuning |
+| `gemma4:e2b-mlx-bf16` | 10 GB | Apple MLX format — not for Ollama |
+| `gemma4:e2b-mxfp8` | 7.9 GB | NVIDIA GPU format — not for Mac |
+
+> **Note:** "E2B" means 2B *effective* (active) parameters via MoE routing, but the full weight file is 7+ GB because all expert layers must be stored. A smaller on-device footprint requires the LiteRT-LM `.litertlm` export (see Phase 2).
 
 ### Verify Ollama is working
 
 ```bash
-ollama list                          # should show gemma4:e2b
-ollama run gemma4:e2b "Say hi"       # quick smoke test
+ollama list                                       # should show gemma4:e2b-it-q4_K_M
+ollama run gemma4:e2b-it-q4_K_M "Say hi"         # quick smoke test
 ```
 
 ### Useful Ollama commands
