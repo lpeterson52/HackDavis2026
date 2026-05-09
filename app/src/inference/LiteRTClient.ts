@@ -2,7 +2,7 @@
  * Phase 2: on-device inference via react-native-litert-lm.
  *
  * To activate:
- *   1. npm install react-native-litert-lm
+ *   1. pnpm add react-native-litert-lm
  *   2. Download gemma-4-E2B-it-litert-lm.litertlm from
  *      https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm
  *      and add it to app assets.

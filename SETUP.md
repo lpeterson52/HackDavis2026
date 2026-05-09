@@ -21,6 +21,7 @@ HackDavis2026/
 | [Ollama](https://ollama.com) | `brew install ollama` |
 | Python 3.10+ | `brew install python` |
 | Node.js 18+ | `brew install node` |
+| pnpm | `npm install -g pnpm` |
 | Watchman | `brew install watchman` |
 | Xcode (iOS) | Mac App Store |
 | Android Studio (Android) | [developer.android.com](https://developer.android.com/studio) |
@@ -32,6 +33,7 @@ HackDavis2026/
 | [Ollama](https://ollama.com) | Download installer from [ollama.com](https://ollama.com) or `winget install Ollama.Ollama` |
 | Python 3.10+ | [python.org](https://www.python.org/downloads/) or `winget install Python.Python.3.11` |
 | Node.js 18+ | [nodejs.org](https://nodejs.org) or `winget install OpenJS.NodeJS` |
+| pnpm | `npm install -g pnpm` |
 | JDK 17 | `winget install Microsoft.OpenJDK.17` |
 | Android Studio | [developer.android.com](https://developer.android.com/studio) |
 
@@ -203,7 +205,7 @@ Expected streaming output (one JSON object per line):
 
 ```bash
 cd app
-npm install
+./start.sh   # installs deps if needed, then starts Metro
 ```
 
 #### Mac — iOS only
@@ -239,21 +241,22 @@ ipconfig   # look for "IPv4 Address" under your active adapter
 
 ```bash
 cd app
-npx react-native run-ios
+pnpm exec react-native run-ios
 ```
 
 ### Run on Android Emulator
 
 ```bash
 cd app
-npx react-native run-android
+pnpm exec react-native run-android
 ```
 
 ### Run Metro bundler separately (optional)
 
 ```bash
 cd app
-npx react-native start
+./start.sh
+# or directly: pnpm exec react-native start
 ```
 
 ---
@@ -271,7 +274,7 @@ npx react-native start
 
 1. Enable **Developer Options** and **USB Debugging** on the phone
 2. Connect via USB
-3. Run `npx react-native run-android`
+3. Run `pnpm exec react-native run-android`
 4. Set `SERVER_URL` to your machine's LAN IP
 
 ---
@@ -294,7 +297,7 @@ When ready to run fully on-device with LiteRT-LM (no server needed):
 
 1. Install the native module:
    ```bash
-   cd app && npm install react-native-litert-lm
+   cd app && pnpm add react-native-litert-lm
    cd ios && pod install   # Mac/iOS only
    ```
 
