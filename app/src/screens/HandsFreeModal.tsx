@@ -2,6 +2,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {
   Animated,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -25,22 +26,35 @@ export interface HandsFreeModalProps {
   onNewMessage?: (userText: string, meta: ChatMeta) => void;
 }
 
-const ORB_COLOR: Record<HFState, string> = {
-  LISTENING: '#ef5350',
-  THINKING: '#1565c0',
-  RESPONDING: '#43a047',
+const STATE_CORE: Record<HFState, string> = {
+  LISTENING: '#c94b30',
+  THINKING: '#5a9fb5',
+  RESPONDING: '#7da43a',
 };
-
-const ORB_GLOW: Record<HFState, string> = {
-  LISTENING: '#ef535044',
-  THINKING: '#1565c022',
-  RESPONDING: '#43a04733',
+const STATE_RING: Record<HFState, string> = {
+  LISTENING: 'rgba(214,67,42,0.55)',
+  THINKING: 'rgba(111,177,196,0.45)',
+  RESPONDING: 'rgba(127,164,74,0.50)',
 };
-
-const STATE_LABEL: Record<HFState, string> = {
-  LISTENING: 'Listening…',
-  THINKING: 'Thinking…',
-  RESPONDING: 'Responding…',
+const STATE_HALO: Record<HFState, string> = {
+  LISTENING: 'rgba(214,67,42,0.15)',
+  THINKING: 'rgba(111,177,196,0.12)',
+  RESPONDING: 'rgba(127,164,74,0.14)',
+};
+const STATE_VIGNETTE: Record<HFState, string> = {
+  LISTENING: 'rgba(214,67,42,0.20)',
+  THINKING: 'rgba(111,177,196,0.18)',
+  RESPONDING: 'rgba(127,164,74,0.22)',
+};
+const STATE_LABEL_COLOR: Record<HFState, string> = {
+  LISTENING: '#ee8068',
+  THINKING: '#93c8d8',
+  RESPONDING: '#a4c473',
+};
+const STATE_LABEL_BASE: Record<HFState, string> = {
+  LISTENING: 'Listening',
+  THINKING: 'Thinking',
+  RESPONDING: 'Speaking',
 };
 
 // Pulse: amplitude and speed vary per state
@@ -52,11 +66,7 @@ const PULSE_CFG: Record<HFState, {min: number; max: number; ms: number}> = {
 
 const SILENCE_MS = 1200;
 
-export default function HandsFreeModal({
-  visible,
-  onClose,
-  onNewMessage,
-}: HandsFreeModalProps) {
+export default function HandsFreeModal({visible, onClose, onNewMessage}: HandsFreeModalProps) {
   const {
     messages,
     sessionState,
@@ -69,23 +79,16 @@ export default function HandsFreeModal({
   const [hfState, setHfState] = useState<HFState>('LISTENING');
   const [userCaption, setUserCaption] = useState('');
   const [aiCaption, setAiCaption] = useState('');
-  // Live transcript updates in real-time as the user speaks
   const [liveTranscript, setLiveTranscript] = useState('');
+  const [dotCount, setDotCount] = useState(1);
 
-  // Refs — survive re-renders in event handlers without stale closures
   const stateRef = useRef<HFState>('LISTENING');
   const transcriptRef = useRef('');
   const ttsActiveRef = useRef(false);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesRef = useRef(messages);
   const sessionStateRef = useRef(sessionState);
-  const ctxRef = useRef({
-    appendUserMessage,
-    startAssistantMessage,
-    appendToMessage,
-    finalizeMessage,
-    onNewMessage,
-  });
+  const ctxRef = useRef({appendUserMessage, startAssistantMessage, appendToMessage, finalizeMessage, onNewMessage});
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { sessionStateRef.current = sessionState; }, [sessionState]);
@@ -95,12 +98,38 @@ export default function HandsFreeModal({
 
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const captionOpacity = useRef(new Animated.Value(1)).current;
+  const openAnim = useRef(new Animated.Value(0)).current;
+
+  // Animated dots for state label
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setDotCount(d => (d % 3) + 1);
+    }, 500);
+    return () => clearInterval(timer);
+  }, []);
 
   const transition = useCallback((next: HFState) => {
     stateRef.current = next;
     setHfState(next);
   }, []);
+
+  // Diagonal zoom open/close — from mic button origin (bottom-right)
+  useEffect(() => {
+    if (visible) {
+      Animated.spring(openAnim, {
+        toValue: 1,
+        tension: 120,
+        friction: 14,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(openAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, openAnim]);
 
   // Pulse — don't reset to 1 on cleanup so there's no jump when state changes
   useEffect(() => {
@@ -115,15 +144,6 @@ export default function HandsFreeModal({
     return () => loop.stop();
   }, [hfState, pulseAnim]);
 
-  // Fade confirmed captions out on THINKING (exchange boundary), in otherwise
-  useEffect(() => {
-    Animated.timing(captionOpacity, {
-      toValue: hfState === 'THINKING' ? 0 : 1,
-      duration: hfState === 'THINKING' ? 200 : 350,
-      useNativeDriver: true,
-    }).start();
-  }, [hfState, captionOpacity]);
-
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current !== null) {
       clearTimeout(silenceTimerRef.current);
@@ -133,75 +153,60 @@ export default function HandsFreeModal({
 
   const startListening = useCallback(async () => {
     transcriptRef.current = '';
-    try {
-      await Voice.start('en-US');
-    } catch {}
+    try { await Voice.start('en-US'); } catch {}
   }, []);
 
-  // Mirrors ChatScreen's send() — called when the user's speech is finalised
-  const doSubmit = useCallback(
-    async (text: string) => {
-      clearSilenceTimer();
+  const doSubmit = useCallback(async (text: string) => {
+    clearSilenceTimer();
+    if (!text.trim()) {
+      transition('LISTENING');
+      await startListening();
+      return;
+    }
 
-      if (!text.trim()) {
-        transition('LISTENING');
-        await startListening();
-        return;
-      }
+    transition('THINKING');
+    setLiveTranscript('');
+    setUserCaption(text);
+    setAiCaption('');
 
-      transition('THINKING');
-      setLiveTranscript('');
-      setUserCaption(text);
-      setAiCaption('');
+    const {
+      appendUserMessage: addUser,
+      startAssistantMessage: startMsg,
+      appendToMessage: addToken,
+      finalizeMessage: finalize,
+      onNewMessage: notify,
+    } = ctxRef.current;
 
-      const {
-        appendUserMessage: addUser,
-        startAssistantMessage: startMsg,
-        appendToMessage: addToken,
-        finalizeMessage: finalize,
-        onNewMessage: notify,
-      } = ctxRef.current;
+    const history = messagesRef.current.map(m => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    }));
 
-      // Snapshot history before appending the new user message
-      const history = messagesRef.current.map(m => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      }));
+    addUser(text);
+    const assistantId = startMsg();
 
-      addUser(text);
-      const assistantId = startMsg();
+    try {
+      const meta = await streamChat(text, sessionStateRef.current, history, token => addToken(assistantId, token));
+      finalize(assistantId, meta);
+      notify?.(text, meta);
 
-      try {
-        const meta = await streamChat(
-          text,
-          sessionStateRef.current,
-          history,
-          token => addToken(assistantId, token),
-        );
-        finalize(assistantId, meta);
-        notify?.(text, meta);
-
-        if (meta.spoken_text) {
-          setAiCaption(meta.spoken_text);
-          ttsActiveRef.current = true;
-          transition('RESPONDING');
-          // Voice is deliberately NOT started here — starting the mic before TTS
-          // causes an AVAudioSession conflict on iOS that silences the speaker.
-          // tts-finish (or tts-error) starts the next listening cycle instead.
-          Tts.speak(meta.spoken_text);
-        } else {
-          transition('LISTENING');
-          await startListening();
-        }
-      } catch {
+      if (meta.spoken_text) {
+        setAiCaption(meta.spoken_text);
+        ttsActiveRef.current = true;
+        transition('RESPONDING');
+        // Voice is deliberately NOT started here — starting the mic before TTS
+        // causes an AVAudioSession conflict on iOS that silences the speaker.
+        Tts.speak(meta.spoken_text);
+      } else {
         transition('LISTENING');
         await startListening();
       }
-    },
-    [transition, startListening, clearSilenceTimer],
-  );
+    } catch {
+      transition('LISTENING');
+      await startListening();
+    }
+  }, [transition, startListening, clearSilenceTimer]);
 
-  // Stable ref so the Voice event handlers (registered once) always call latest doSubmit
   const doSubmitRef = useRef(doSubmit);
   useEffect(() => { doSubmitRef.current = doSubmit; }, [doSubmit]);
 
@@ -217,28 +222,21 @@ export default function HandsFreeModal({
     transcriptRef.current = '';
     ttsActiveRef.current = false;
 
-    // Final results — update transcript ref (used by onSpeechEnd to submit)
     Voice.onSpeechResults = (e: SpeechResultsEvent) => {
       const t = e.value?.[0] ?? '';
       if (t) transcriptRef.current = t;
     };
 
-    // Partial results — live transcription + 1.2 s silence detection
     Voice.onSpeechPartialResults = (e: SpeechResultsEvent) => {
       const t = e.value?.[0] ?? '';
       if (!t || stateRef.current !== 'LISTENING') return;
-
       transcriptRef.current = t;
       setLiveTranscript(t);
-
-      // Reset the silence timer on every new word batch
       if (silenceTimerRef.current !== null) clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = setTimeout(() => {
         silenceTimerRef.current = null;
         if (stateRef.current === 'LISTENING') {
-          // Clear live caption immediately so UI feels responsive
           setLiveTranscript('');
-          // Soft-stop triggers onSpeechResults (final) then onSpeechEnd → submit
           Voice.stop().catch(() => {});
         }
       }, SILENCE_MS);
@@ -253,7 +251,6 @@ export default function HandsFreeModal({
       }
     };
 
-    // Speech session ended — submit whatever transcript was captured
     Voice.onSpeechEnd = (_e: SpeechEndEvent) => {
       if (silenceTimerRef.current !== null) {
         clearTimeout(silenceTimerRef.current);
@@ -264,7 +261,6 @@ export default function HandsFreeModal({
         if (t) {
           doSubmitRef.current(t);
         } else {
-          // Empty session (silence timeout, no speech) — restart
           setTimeout(() => {
             if (stateRef.current === 'LISTENING') Voice.start('en-US').catch(() => {});
           }, 400);
@@ -273,7 +269,6 @@ export default function HandsFreeModal({
     };
 
     Voice.onSpeechError = (_e: SpeechErrorEvent) => {
-      // iOS fires spurious errors; retry after a brief pause
       if (stateRef.current === 'LISTENING') {
         setTimeout(() => {
           if (stateRef.current === 'LISTENING') Voice.start('en-US').catch(() => {});
@@ -281,9 +276,8 @@ export default function HandsFreeModal({
       }
     };
 
-    // Single handler for all TTS end conditions — finish, error, cancel
     const ttsEndHandler = () => {
-      if (!ttsActiveRef.current) return; // guard: only handle once per speak()
+      if (!ttsActiveRef.current) return;
       ttsActiveRef.current = false;
       if (stateRef.current === 'RESPONDING') {
         transition('LISTENING');
@@ -324,32 +318,47 @@ export default function HandsFreeModal({
     onClose();
   }
 
-  const orbColor = ORB_COLOR[hfState];
-  const orbGlow = ORB_GLOW[hfState];
-
-  // While the user is actively speaking show the live transcript in the user slot;
-  // outside of LISTENING (THINKING / RESPONDING) show the confirmed caption
   const userDisplayText =
-    hfState === 'LISTENING' && liveTranscript.trim()
-      ? liveTranscript
-      : userCaption;
+    hfState === 'LISTENING' && liveTranscript.trim() ? liveTranscript : userCaption;
   const userIsLive = hfState === 'LISTENING' && !!liveTranscript.trim();
+
+  const dots = '.'.repeat(dotCount);
+
+  const openScale = openAnim.interpolate({inputRange: [0, 1], outputRange: [0.4, 1]});
+  const openTranslateX = openAnim.interpolate({inputRange: [0, 1], outputRange: [60, 0]});
+  const openTranslateY = openAnim.interpolate({inputRange: [0, 1], outputRange: [220, 0]});
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       statusBarTranslucent
       onRequestClose={handleClose}>
-      <View style={styles.overlay}>
+      <Animated.View
+        style={[
+          styles.overlay,
+          {
+            transform: [
+              {scale: openScale},
+              {translateX: openTranslateX},
+              {translateY: openTranslateY},
+            ],
+          },
+        ]}>
+        {/* State vignette — full-bleed color wash */}
+        <View
+          style={[StyleSheet.absoluteFill, {backgroundColor: STATE_VIGNETTE[hfState]}]}
+          pointerEvents="none"
+        />
+
         {/* Close */}
         <Pressable style={styles.closeBtn} onPress={handleClose} hitSlop={20}>
           <Text style={styles.closeBtnText}>✕</Text>
         </Pressable>
 
-        {/* Captions — flex: 1, anchored to bottom of this area */}
-        <Animated.View style={[styles.captionsArea, {opacity: captionOpacity}]}>
+        {/* Captions — flex:1, anchored to bottom of this area */}
+        <View style={styles.captionsArea}>
           {userDisplayText ? (
             <View style={styles.userCaptionRow}>
               <Text
@@ -366,37 +375,50 @@ export default function HandsFreeModal({
               </Text>
             </View>
           ) : null}
-        </Animated.View>
+        </View>
 
         {/* Orb — lower center; tappable to dismiss */}
         <View style={styles.orbSection}>
-          <Text style={styles.stateLabel}>{STATE_LABEL[hfState]}</Text>
+          <Text style={[styles.stateLabel, {color: STATE_LABEL_COLOR[hfState]}]}>
+            {STATE_LABEL_BASE[hfState]}{dots}
+          </Text>
           <Pressable onPress={handleClose} hitSlop={24}>
             <View style={styles.orbArea}>
+              {/* Halo — outer diffuse glow */}
               <Animated.View
                 style={[
-                  styles.orbGlow,
-                  {backgroundColor: orbGlow, transform: [{scale: pulseAnim}]},
+                  styles.orbHalo,
+                  {backgroundColor: STATE_HALO[hfState], transform: [{scale: pulseAnim}]},
                 ]}
               />
+              {/* Ring — 1px border circle */}
               <Animated.View
                 style={[
-                  styles.orb,
-                  {backgroundColor: orbColor, transform: [{scale: pulseAnim}]},
+                  styles.orbRing,
+                  {borderColor: STATE_RING[hfState], transform: [{scale: pulseAnim}]},
+                ]}
+              />
+              {/* Core — solid sphere */}
+              <Animated.View
+                style={[
+                  styles.orbCore,
+                  {backgroundColor: STATE_CORE[hfState], transform: [{scale: pulseAnim}]},
                 ]}
               />
             </View>
           </Pressable>
         </View>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
 
+const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
+
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.88)',
+    backgroundColor: '#07080a',
     flexDirection: 'column',
   },
 
@@ -407,81 +429,88 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#222',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
   },
-  closeBtnText: {color: '#aaa', fontSize: 16, fontWeight: '600'},
+  closeBtnText: {color: 'rgba(255,255,255,0.45)', fontSize: 14, fontWeight: '600'},
 
-  // Takes all space above the orb; captions stack from the bottom
   captionsArea: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 100, // clear the close button
+    paddingTop: 108,
     paddingBottom: 20,
     justifyContent: 'flex-end',
-    gap: 12,
-  },
-
-  aiCaptionRow: {alignItems: 'flex-start'},
-  aiCaption: {
-    color: '#ddd',
-    fontSize: 15,
-    lineHeight: 22,
-    backgroundColor: '#1a1a1acc',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    maxWidth: '90%',
+    gap: 10,
   },
 
   userCaptionRow: {alignItems: 'flex-end'},
   userCaption: {
-    color: '#fff',
+    color: 'rgba(255,255,255,0.90)',
     fontSize: 16,
-    lineHeight: 22,
-    backgroundColor: '#1565c0cc',
-    borderRadius: 14,
+    lineHeight: 23,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
     maxWidth: '85%',
     textAlign: 'right',
   },
-  // Live transcript: same bubble, slightly translucent to signal it's interim
   userCaptionLive: {
-    backgroundColor: '#1565c088',
-    color: '#cce',
+    color: 'rgba(255,255,255,0.45)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
 
-  // Fixed-height section at the bottom for the orb
+  aiCaptionRow: {alignItems: 'flex-start'},
+  aiCaption: {
+    color: '#a4c473',
+    fontSize: 15,
+    lineHeight: 22,
+    backgroundColor: 'rgba(127,164,74,0.10)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    maxWidth: '90%',
+  },
+
   orbSection: {
     alignItems: 'center',
-    paddingBottom: 64,
+    paddingBottom: 72,
+    gap: 20,
   },
   stateLabel: {
-    color: '#bbb',
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '600',
-    letterSpacing: 0.4,
-    marginBottom: 16,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    fontFamily: MONO,
   },
+
   orbArea: {
-    width: 160,
-    height: 160,
+    width: 220,
+    height: 220,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  orb: {
+  orbHalo: {
     position: 'absolute',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
   },
-  orbGlow: {
+  orbRing: {
     position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 156,
+    height: 156,
+    borderRadius: 78,
+    borderWidth: 1,
+    backgroundColor: 'transparent',
+  },
+  orbCore: {
+    position: 'absolute',
+    width: 92,
+    height: 92,
+    borderRadius: 46,
   },
 });
