@@ -183,12 +183,11 @@ export default function HandsFreeModal({
 
         if (meta.spoken_text) {
           setAiCaption(meta.spoken_text);
-          transition('RESPONDING');
-          // Attempt barge-in setup before TTS begins — may silently fail on iOS
-          // due to AVAudioSession not supporting record+playback simultaneously.
-          // tts-finish restarts the listening cycle regardless.
-          try { await Voice.start('en-US'); } catch {}
           ttsActiveRef.current = true;
+          transition('RESPONDING');
+          // Voice is deliberately NOT started here — starting the mic before TTS
+          // causes an AVAudioSession conflict on iOS that silences the speaker.
+          // tts-finish (or tts-error) starts the next listening cycle instead.
           Tts.speak(meta.spoken_text);
         } else {
           transition('LISTENING');
@@ -237,6 +236,8 @@ export default function HandsFreeModal({
       silenceTimerRef.current = setTimeout(() => {
         silenceTimerRef.current = null;
         if (stateRef.current === 'LISTENING') {
+          // Clear live caption immediately so UI feels responsive
+          setLiveTranscript('');
           // Soft-stop triggers onSpeechResults (final) then onSpeechEnd → submit
           Voice.stop().catch(() => {});
         }
@@ -280,15 +281,18 @@ export default function HandsFreeModal({
       }
     };
 
-    const ttsFinishHandler = () => {
+    // Single handler for all TTS end conditions — finish, error, cancel
+    const ttsEndHandler = () => {
+      if (!ttsActiveRef.current) return; // guard: only handle once per speak()
       ttsActiveRef.current = false;
       if (stateRef.current === 'RESPONDING') {
         transition('LISTENING');
-        // Start Voice now if barge-in setup failed earlier
         Voice.start('en-US').catch(() => {});
       }
     };
-    Tts.addEventListener('tts-finish', ttsFinishHandler);
+    Tts.addEventListener('tts-finish', ttsEndHandler);
+    Tts.addEventListener('tts-error', ttsEndHandler);
+    Tts.addEventListener('tts-cancel', ttsEndHandler);
 
     Voice.start('en-US').catch(() => {});
 
@@ -303,7 +307,9 @@ export default function HandsFreeModal({
         Tts.stop().catch(() => {});
         ttsActiveRef.current = false;
       }
-      Tts.removeEventListener('tts-finish', ttsFinishHandler);
+      Tts.removeEventListener('tts-finish', ttsEndHandler);
+      Tts.removeEventListener('tts-error', ttsEndHandler);
+      Tts.removeEventListener('tts-cancel', ttsEndHandler);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
@@ -344,13 +350,6 @@ export default function HandsFreeModal({
 
         {/* Captions — flex: 1, anchored to bottom of this area */}
         <Animated.View style={[styles.captionsArea, {opacity: captionOpacity}]}>
-          {aiCaption ? (
-            <View style={styles.aiCaptionRow}>
-              <Text style={styles.aiCaption} numberOfLines={4}>
-                {aiCaption}
-              </Text>
-            </View>
-          ) : null}
           {userDisplayText ? (
             <View style={styles.userCaptionRow}>
               <Text
@@ -360,25 +359,34 @@ export default function HandsFreeModal({
               </Text>
             </View>
           ) : null}
+          {aiCaption ? (
+            <View style={styles.aiCaptionRow}>
+              <Text style={styles.aiCaption} numberOfLines={4}>
+                {aiCaption}
+              </Text>
+            </View>
+          ) : null}
         </Animated.View>
 
-        {/* Orb — lower center */}
+        {/* Orb — lower center; tappable to dismiss */}
         <View style={styles.orbSection}>
           <Text style={styles.stateLabel}>{STATE_LABEL[hfState]}</Text>
-          <View style={styles.orbArea}>
-            <Animated.View
-              style={[
-                styles.orbGlow,
-                {backgroundColor: orbGlow, transform: [{scale: pulseAnim}]},
-              ]}
-            />
-            <Animated.View
-              style={[
-                styles.orb,
-                {backgroundColor: orbColor, transform: [{scale: pulseAnim}]},
-              ]}
-            />
-          </View>
+          <Pressable onPress={handleClose} hitSlop={24}>
+            <View style={styles.orbArea}>
+              <Animated.View
+                style={[
+                  styles.orbGlow,
+                  {backgroundColor: orbGlow, transform: [{scale: pulseAnim}]},
+                ]}
+              />
+              <Animated.View
+                style={[
+                  styles.orb,
+                  {backgroundColor: orbColor, transform: [{scale: pulseAnim}]},
+                ]}
+              />
+            </View>
+          </Pressable>
         </View>
       </View>
     </Modal>
