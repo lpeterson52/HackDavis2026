@@ -107,7 +107,6 @@ export default function ChatScreen() {
       });
       finalizeMessage(assistantId, meta);
       if (meta.spoken_text) {
-        Tts.stop(false);
         Tts.speak(meta.spoken_text);
       }
     } catch (e: any) {
