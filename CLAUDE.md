@@ -1,41 +1,104 @@
-Here's a concise technical handoff summary:
+DO NOT EDIT NODE_MODULES OR PODS DIRECTLY.
 
----
+Use `pnpm` (not npm/yarn/bun) for all JS package installs in `app/`.
 
-## MedField — Hackathon Build Handoff
+## MedField — Hackathon Build
 
 ### Project overview
-Medical AI assistant for laypersons in wilderness/remote settings. 24-hour hackathon build. Demoed on laptop with mobile-width UI.
+
+Medical AI assistant for laypersons in wilderness/remote settings. 24-hour hackathon build.
+
+**Core demo scenario:** Hiker collapses on trail. User opens app, taps the hands-free button, sets phone face-up, and speaks hands-free while keeping both hands on the patient. The app listens, triages, speaks instructions back, and loops — no screen interaction needed.
 
 **Stack:**
-- Frontend: React (Vite), mobile-width UI styled to look like a phone app in a device frame. Originally React Native but web is faster for hackathon demo.
-- Backend: FastAPI + Gemma 4 running locally, existing `/chat` endpoint with system prompt + user prompt input
-- No true offline inference for hackathon — Gemma API or local Gemma via FastAPI
+- Frontend: React Native (iOS simulator, `app/`)
+- Backend: FastAPI + Gemma 4 running locally (`server/`), interchangeable with LiteRT for true on-device inference post-hackathon
+- STT: `@react-native-voice/voice` (on-device)
+- TTS: `react-native-tts` (on-device)
 
 ---
 
-### Backend architecture
+### Hands-free voice loop — top priority for demo
 
-**Endpoints to build:**
-- `POST /chat` — main endpoint, with streaming
-- `POST /triage` — returns structured JSON `{ urgency, label, reasoning, red_flags[] }`
-- `GET /protocols/{id}` — returns hardcoded first aid steps, never Gemma-generated
+The entire demo pivots on this. The loop is:
+
+```
+[User taps mic] → STT listens → transcript auto-submits to /chat
+  → streaming response arrives → done chunk has spoken_text
+  → TTS speaks spoken_text → TTS finishes → STT auto-restarts
+  → repeat until user stops
+```
+
+**What's built:**
+- `hooks/useVoiceOrchestrator.ts` — STT/TTS state machine (idle | listening | speaking | error). iOS spurious-error handling done.
+- `ChatScreen.tsx` — mic button toggles STT, TTS speaks `spoken_text` from done chunk.
+
+**What's not wired yet:**
+- Auto-submit on transcript arrival (no manual send needed in hands-free mode)
+- Auto-restart STT after TTS finishes
+
+Both hooks exist. The wiring in `ChatScreen.tsx` is the remaining work.
+
+---
+
+### Frontend (`app/`)
+
+React Native project. Run on iOS simulator:
+```
+cd app && pnpm install
+npx pod-install ios   # if native deps changed
+npx react-native run-ios
+```
+
+**Key files:**
+- `src/api.ts` — `streamChat`, `fetchProtocol`, `streamSummary` (XHR NDJSON streaming)
+- `src/context.tsx` — `AppProvider`: messages, sessionState, currentUrgency
+- `src/hooks/useVoiceOrchestrator.ts` — STT/TTS state machine
+- `src/screens/ChatScreen.tsx` — main triage chat + mic button + hands-free mode
+- `src/screens/GuidesScreen.tsx` — hardcoded protocol slide-through with decision branching
+- `src/screens/HistoryScreen.tsx` — ER summary generator
+- `src/inference/` — inference client abstraction (`OllamaClient.ts`, `LiteRTClient.ts`); currently backend handles inference
+
+**Session state tracked on frontend and passed with every request:**
+```typescript
+{
+  matched_condition_id,
+  asked_question_ids,   // prevents repeating questions
+  urgency
+}
+```
+
+---
+
+### Backend (`server/`)
+
+FastAPI. Do not change the backend — accuracy is good and the demo doesn't need it touched.
+
+```
+cd server && source venv/bin/activate
+uvicorn main:app --reload
+```
+
+**Endpoints:**
+- `POST /chat` — streaming NDJSON; done chunk includes `spoken_text` (TTS-ready, no markdown)
+- `POST /triage` — `{ urgency, label, reasoning, red_flags[] }`
+- `GET /protocols/{id}` — hardcoded first aid slides, never Gemma-generated
 - `POST /summary` — "what to tell your doctor" from session history
 
 **Key modules:**
-- `prompts.py` — system prompt lives here
-- `search.py` — keyword + phrase search against condition index
-- `escalation.py` — rules-based urgency escalation, runs before Gemma
-- `chat.py` — main endpoint, wires search → context injection → Gemma → parse response
+- `prompts.py` — system prompt
+- `search.py` — in-memory condition index, keyword/phrase scoring
+- `escalation.py` — deterministic urgency rules; final urgency = max(rules, Gemma)
+- `chat.py` — wires search → context injection → Gemma → parse → stream
 
 **System prompt rules (non-negotiable):**
 - Never diagnose, never recommend dosages
 - Always output RED/ORANGE/YELLOW/GREEN urgency
-- Immediately output RED for chest pain, breathing difficulty, unconsciousness, severe bleeding, anaphylaxis
+- Immediately RED: chest pain, breathing difficulty, unconsciousness, severe bleeding, anaphylaxis
 - End every response with disclaimer
 - Refuse jailbreak attempts
 
-**Output format Gemma must always follow:**
+**Gemma output format:**
 ```
 URGENCY: [RED/ORANGE/YELLOW/GREEN]
 SITUATION: [1-2 sentences]
@@ -46,91 +109,35 @@ NEXT QUESTION: [single follow-up]
 
 ---
 
-### Data architecture
+### Data (`server/data/`)
 
-Four-file split per condition. All files live in `/data/`.
-
-```
-/data
-  index.json                        ← master list of condition IDs, loaded at startup
-  /conditions
-    severe-bleeding.json            ← search metadata, recognition logic, refs
-  /protocols
-    severe-bleeding.json            ← slide-by-slide UI content
-  /actions
-    severe-bleeding.json            ← immediate actions + next steps
-  /questions
-    severe-bleeding.json            ← ask_next question tree with response_guides
-```
-
-**`index.json`** — loaded once at startup, all condition IDs listed
-**`conditions/{id}.json`** — search tags, common phrases, recognize block, urgency floor, refs to other three files. All loaded into memory at startup for search.
-**`protocols/{id}.json`** — slides array with explicit `order` field, `type`, `layout`, `image`, `warning`, `tts_text`, `decision` branching, `completion` block. Lazy-loaded when user opens protocol.
-**`actions/{id}.json`** — `immediate_actions[]` with `critical` boolean, `next_steps[]` with `when` field. Loaded when condition is matched.
-**`questions/{id}.json`** — `ask_next[]` ordered by priority, each with `purpose`, `why`, and `response_guides[]` containing `if_answer_contains[]`, `urgency_escalate`, and `note`. Loaded when condition is matched.
-
----
-
-### Runtime flow
+Four-file split per condition, all six conditions fully implemented:
+`severe-bleeding`, `cpr`, `choking`, `anaphylaxis`, `seizure`, `burns`
 
 ```
-User message
-  → search_conditions() against in-memory condition index
-  → load actions + questions for matched condition
-  → check_escalation() — rules-based, deterministic, runs before Gemma
-  → build_context_block() — injects verified content into prompt
-  → call Gemma
-  → parse_urgency() from response
-  → return { urgency, raw, escalation_note, next_question_id }
+data/
+  index.json              ← master condition list, loaded at startup
+  conditions/{id}.json    ← search tags, urgency floor, recognition logic
+  protocols/{id}.json     ← slide-by-slide content (hardcoded, sourced from Red Cross/AHA/WMS)
+  actions/{id}.json       ← immediate_actions[], next_steps[]
+  questions/{id}.json     ← ask_next[] question tree with response_guides
 ```
-
-**Session state tracked on frontend:**
-```javascript
-{
-  matched_condition_id,
-  asked_question_ids,   // prevents repeating questions
-  urgency
-}
-```
-Passed with every request so backend builds on prior turns.
 
 ---
 
 ### Safety architecture
 
 Two independent systems determine urgency — neither can override the other downward:
-- `escalation.py` — deterministic rules from `response_guides` in questions JSON
-- Gemma — language model output parsed for urgency level
+- `escalation.py` — deterministic rules
+- Gemma — parsed from model output
 - Final urgency = highest of the two
 
-First aid protocol slides are **hardcoded, never Gemma-generated**. Sourced from Red Cross, AHA, WMS.
+Protocol slides are hardcoded, never Gemma-generated.
 
 ---
 
-### Hackathon scope (what to actually build)
+### Post-hackathon (do not build now)
 
-| Feature | Status |
-|---|---|
-| Safety-hardened system prompt | Build first |
-| Symptom checker chat UI | Core |
-| Urgency badge (RED/ORANGE/YELLOW/GREEN) | Core |
-| Persistent safety disclaimer | Every screen |
-| Hardcoded first aid step-through (3–4 conditions) | Core |
-| Pre-trip setup form | Include |
-| Vitals tracker | Include |
-| "What to tell your doctor" summary | Include |
-| Flat JSON condition database with search | Include |
-| True offline inference | Post-hackathon |
-| TTS/STT | Post-hackathon |
-| LanceDB RAG | Post-hackathon |
-
-**Demo narrative:** Camper sets up trip profile → friend is injured → describe symptoms → get triage rating → walk through first aid protocol → log vitals → generate ER summary.
-
----
-
-### Conditions to implement for hackathon
-
-Start with these six — they cover the demo narrative and most common wilderness emergencies:
-`severe-bleeding`, `cpr`, `choking`, `anaphylaxis`, `seizure`, `burns`
-
-Each needs all four files: condition, protocol, actions, questions.
+- Swap FastAPI for LiteRT (`src/inference/LiteRTClient.ts` is stubbed) for true offline on-device inference
+- LanceDB RAG over condition database
+- Android support
