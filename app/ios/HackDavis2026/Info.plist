@@ -35,6 +35,10 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>MedField needs microphone access to listen to your voice.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>MedField uses on-device speech recognition to understand your symptoms.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

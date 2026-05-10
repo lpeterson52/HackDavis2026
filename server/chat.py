@@ -9,7 +9,16 @@ from pydantic import BaseModel
 
 import search as search_module
 import escalation as escalation_module
-from prompts import SYSTEM_PROMPT, build_context_block, build_prompt
+from prompts import (
+    SYSTEM_PROMPT,
+    CLASSIFICATION_PROMPT,
+    SPOKEN_PROMPT,
+    HARDCODED_RED_RESPONSES,
+    CATEGORY_TO_CONDITION_ID,
+    build_context_block,
+    build_prompt,
+    build_spoken_context,
+)
 
 router = APIRouter()
 
@@ -58,6 +67,30 @@ def _parse_urgency(text: str) -> str | None:
 def _pick_next_question(questions: dict, asked_ids: list[str]) -> dict | None:
     candidates = [q for q in questions.get("ask_next", []) if q["id"] not in asked_ids]
     return min(candidates, key=lambda q: q["priority"]) if candidates else None
+
+
+async def _call_classification(client: httpx.AsyncClient, user_message: str) -> dict | None:
+    messages = [
+        {"role": "system", "content": CLASSIFICATION_PROMPT},
+        {"role": "user", "content": user_message},
+    ]
+    try:
+        resp = await client.post(
+            f"{OLLAMA_BASE}/api/chat",
+            json={"model": MODEL, "messages": messages, "stream": False,
+                  "options": {"temperature": 0, "num_predict": 150}},
+            timeout=15.0,
+        )
+        if resp.status_code != 200:
+            return None
+        raw = resp.json().get("message", {}).get("content", "").strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        return json.loads(raw.strip())
+    except Exception:
+        return None
 
 
 @router.post("/chat")
@@ -114,40 +147,116 @@ async def chat(req: ChatRequest):
         messages.append({"role": msg.role, "content": msg.content})
     messages.append({"role": "user", "content": current_user_content})
 
-    # 5. Stream via /api/chat (multi-turn), emit final metadata frame when done
-    accumulated: list[str] = []
+    # 5. Two-stage inference: classify → spoken response (or hardcoded for RED)
+    spoken_text_accumulator: list[str] = []
 
     async def stream():
-        async with httpx.AsyncClient(timeout=None) as client:
-            try:
-                async with client.stream(
-                    "POST",
-                    f"{OLLAMA_BASE}/api/chat",
-                    json={"model": MODEL, "messages": messages, "stream": True},
-                ) as resp:
-                    if resp.status_code != 200:
-                        yield json.dumps({"token": "", "done": True, "error": f"Ollama error {resp.status_code}"}) + "\n"
-                        return
-                    async for line in resp.aiter_lines():
-                        if not line:
-                            continue
-                        try:
-                            chunk = json.loads(line)
-                        except json.JSONDecodeError:
-                            continue
-                        token = chunk.get("message", {}).get("content", "")
-                        done = chunk.get("done", False)
-                        accumulated.append(token)
-                        yield json.dumps({"token": token, "done": False}) + "\n"
-                        if done:
-                            break
-            except httpx.ConnectError:
-                yield json.dumps({"token": "", "done": True, "error": "Cannot reach Ollama — is it running?"}) + "\n"
-                return
+        nonlocal matched_id
 
-        full_text = "".join(accumulated)
+        async with httpx.AsyncClient(timeout=None) as client:
+
+            # Call 1 — classification (temp=0, JSON, non-streaming)
+            classification: dict | None = None
+            try:
+                classification = await _call_classification(client, req.message)
+            except Exception:
+                pass
+
+            category: str = "UNKNOWN"
+            clf_urgency: str | None = None
+            confidence: str = "LOW"
+            clarifying_question: str | None = None
+
+            if classification and all(k in classification for k in ("category", "urgency", "confidence")):
+                category = classification.get("category", "UNKNOWN")
+                clf_urgency = classification.get("urgency")
+                confidence = classification.get("confidence", "LOW")
+                clarifying_question = classification.get("clarifying_question")
+                if matched_id is None and category != "UNKNOWN":
+                    matched_id = CATEGORY_TO_CONDITION_ID.get(category)
+            else:
+                classification = None  # signal fallback path
+
+            clf_urgency_resolved = escalation_module.max_urgency(floor_urgency, clf_urgency)
+            use_hardcoded = clf_urgency_resolved == "RED"
+            use_clarifying = (confidence == "LOW") and (clarifying_question is not None) and not use_hardcoded
+
+            if classification is None:
+                # Fallback: original single-call with SYSTEM_PROMPT
+                try:
+                    async with client.stream(
+                        "POST", f"{OLLAMA_BASE}/api/chat",
+                        json={"model": MODEL, "messages": messages, "stream": True},
+                    ) as resp:
+                        if resp.status_code != 200:
+                            yield json.dumps({"token": "", "done": True, "error": f"Ollama error {resp.status_code}"}) + "\n"
+                            return
+                        async for line in resp.aiter_lines():
+                            if not line:
+                                continue
+                            try:
+                                chunk = json.loads(line)
+                            except json.JSONDecodeError:
+                                continue
+                            token = chunk.get("message", {}).get("content", "")
+                            spoken_text_accumulator.append(token)
+                            yield json.dumps({"token": token, "done": False}) + "\n"
+                            if chunk.get("done", False):
+                                break
+                except httpx.ConnectError:
+                    yield json.dumps({"token": "", "done": True, "error": "Cannot reach Ollama — is it running?"}) + "\n"
+                    return
+
+            elif use_hardcoded:
+                spoken = HARDCODED_RED_RESPONSES.get(category, HARDCODED_RED_RESPONSES["UNKNOWN"])
+                spoken_text_accumulator.append(spoken)
+                yield json.dumps({"token": spoken, "done": False}) + "\n"
+
+            elif use_clarifying:
+                spoken_text_accumulator.append(clarifying_question)
+                yield json.dumps({"token": clarifying_question, "done": False}) + "\n"
+
+            else:
+                # Call 2 — spoken response (streaming, 1-2 sentences)
+                spoken_ctx = build_spoken_context(
+                    category, clf_urgency_resolved or "GREEN", req.message,
+                    facts=all_facts or None, symptoms=updated_symptoms,
+                    called_911=req.session_state.called_911,
+                )
+                spoken_messages = [
+                    {"role": "system", "content": SPOKEN_PROMPT},
+                    {"role": "user", "content": spoken_ctx},
+                ]
+                try:
+                    async with client.stream(
+                        "POST", f"{OLLAMA_BASE}/api/chat",
+                        json={"model": MODEL, "messages": spoken_messages, "stream": True,
+                              "options": {"temperature": 0.3, "num_predict": 80}},
+                    ) as resp:
+                        if resp.status_code != 200:
+                            fallback = HARDCODED_RED_RESPONSES["UNKNOWN"]
+                            spoken_text_accumulator.append(fallback)
+                            yield json.dumps({"token": fallback, "done": False}) + "\n"
+                        else:
+                            async for line in resp.aiter_lines():
+                                if not line:
+                                    continue
+                                try:
+                                    chunk = json.loads(line)
+                                except json.JSONDecodeError:
+                                    continue
+                                token = chunk.get("message", {}).get("content", "")
+                                spoken_text_accumulator.append(token)
+                                yield json.dumps({"token": token, "done": False}) + "\n"
+                                if chunk.get("done", False):
+                                    break
+                except httpx.ConnectError:
+                    yield json.dumps({"token": "", "done": True, "error": "Cannot reach Ollama — is it running?"}) + "\n"
+                    return
+
+        full_text = "".join(spoken_text_accumulator)
         gemma_urgency = _parse_urgency(full_text)
-        final_urgency = escalation_module.max_urgency(floor_urgency, gemma_urgency)
+        final_urgency = escalation_module.max_urgency(clf_urgency_resolved, gemma_urgency)
         called_911_updated = req.session_state.called_911 or (final_urgency == "RED")
 
         yield json.dumps({
@@ -160,6 +269,8 @@ async def chat(req: ChatRequest):
             "new_facts": new_facts,
             "symptoms": updated_symptoms,
             "called_911": called_911_updated,
+            "classification": classification,
+            "spoken_text": full_text.strip(),
         }) + "\n"
 
     return StreamingResponse(stream(), media_type="application/x-ndjson")

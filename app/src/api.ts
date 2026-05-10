@@ -9,6 +9,13 @@ export interface SessionState {
   called_911: boolean;
 }
 
+export interface ClassificationResult {
+  category: string;
+  urgency: string;
+  confidence: string;
+  clarifying_question: string | null;
+}
+
 export interface ChatMeta {
   urgency: string;
   matched_condition_id: string | null;
@@ -17,6 +24,8 @@ export interface ChatMeta {
   new_facts: Record<string, string> | null;
   symptoms: string[] | null;
   called_911: boolean | null;
+  classification: ClassificationResult | null;
+  spoken_text: string | null;
 }
 
 export interface Slide {
@@ -99,9 +108,11 @@ export function streamChat(
     new_facts: null,
     symptoms: null,
     called_911: null,
+    classification: null,
+    spoken_text: null,
   };
 
-  type Chunk = { token: string; done: boolean; urgency?: string; matched_condition_id?: string; escalation_note?: string; next_question_id?: string; new_facts?: Record<string, string>; symptoms?: string[]; called_911?: boolean };
+  type Chunk = { token: string; done: boolean; urgency?: string; matched_condition_id?: string; escalation_note?: string; next_question_id?: string; new_facts?: Record<string, string>; symptoms?: string[]; called_911?: boolean; classification?: ClassificationResult; spoken_text?: string };
 
   return ndjsonXhr<Chunk>(
     'POST',
@@ -117,6 +128,8 @@ export function streamChat(
           new_facts: chunk.new_facts ?? null,
           symptoms: chunk.symptoms ?? null,
           called_911: chunk.called_911 ?? null,
+          classification: chunk.classification ?? null,
+          spoken_text: chunk.spoken_text ?? null,
         };
       } else if (chunk.token) {
         onToken(chunk.token);

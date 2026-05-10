@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,6 +11,11 @@ import {
   View,
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
+import Voice, {
+  SpeechErrorEvent,
+  SpeechResultsEvent,
+} from '@react-native-voice/voice';
+import Tts from 'react-native-tts';
 import {streamChat} from '../api';
 import {ChatMessage, useAppContext} from '../context';
 
@@ -42,7 +47,45 @@ export default function ChatScreen() {
 
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const sendRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    Voice.onSpeechResults = (e: SpeechResultsEvent) => {
+      const transcript = e.value?.[0] ?? '';
+      if (transcript) {
+        setInput(transcript);
+      }
+    };
+    Voice.onSpeechEnd = () => {
+      setIsListening(false);
+      sendRef.current?.();
+    };
+    Voice.onSpeechError = (e: SpeechErrorEvent) => {
+      setIsListening(false);
+      setVoiceError(e.error?.message ?? 'Voice recognition failed');
+    };
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
+
+  async function toggleListening() {
+    if (isListening) {
+      await Voice.stop();
+      setIsListening(false);
+    } else {
+      setVoiceError(null);
+      try {
+        await Voice.start('en-US');
+        setIsListening(true);
+      } catch {
+        setVoiceError('Microphone unavailable — type instead');
+      }
+    }
+  }
 
   async function send() {
     const text = input.trim();
@@ -63,6 +106,10 @@ export default function ChatScreen() {
         scrollRef.current?.scrollToEnd({animated: false});
       });
       finalizeMessage(assistantId, meta);
+      if (meta.spoken_text) {
+        Tts.stop(false);
+        Tts.speak(meta.spoken_text);
+      }
     } catch (e: any) {
       appendToMessage(assistantId, `_Error: ${e.message}_`);
     } finally {
@@ -70,6 +117,8 @@ export default function ChatScreen() {
       scrollRef.current?.scrollToEnd({animated: false});
     }
   }
+
+  sendRef.current = send;
 
   const urgencyColor = currentUrgency ? URGENCY_COLOR[currentUrgency] : null;
 
@@ -120,6 +169,13 @@ export default function ChatScreen() {
         </Text>
       </View>
 
+      {/* Voice error banner */}
+      {voiceError && (
+        <View style={styles.voiceErrorBanner}>
+          <Text style={styles.voiceErrorText}>{voiceError}</Text>
+        </View>
+      )}
+
       {/* Input */}
       <View style={styles.inputRow}>
         <TextInput
@@ -133,6 +189,12 @@ export default function ChatScreen() {
           blurOnSubmit={false}
           onSubmitEditing={send}
         />
+        <Pressable
+          style={[styles.micBtn, isListening && styles.micBtnActive, streaming && styles.micBtnDisabled]}
+          onPress={toggleListening}
+          disabled={streaming}>
+          <Text style={styles.micBtnText}>{isListening ? '🔴' : '🎙️'}</Text>
+        </Pressable>
         <Pressable
           style={[styles.sendBtn, (streaming || !input.trim()) && styles.sendBtnDisabled]}
           onPress={send}
@@ -206,7 +268,7 @@ function MessageBubble({message}: {message: ChatMessage}) {
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: '#0f0f0f'},
+  root: {flex: 1, backgroundColor: '#0f0f0f', paddingTop: 45},
 
   header: {
     flexDirection: 'row',
@@ -320,6 +382,30 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: {backgroundColor: '#1a2a3a'},
   sendBtnText: {color: '#fff', fontWeight: '700', fontSize: 15},
+
+  micBtn: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    minWidth: 46,
+  },
+  micBtnActive: {borderColor: '#f44336', backgroundColor: '#2a0a0a'},
+  micBtnDisabled: {opacity: 0.4},
+  micBtnText: {fontSize: 18},
+
+  voiceErrorBanner: {
+    backgroundColor: '#2a1500',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#3a2000',
+  },
+  voiceErrorText: {color: '#ff9800', fontSize: 12, textAlign: 'center'},
 });
 
 const mdStyles = StyleSheet.create({
