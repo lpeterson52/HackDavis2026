@@ -18,6 +18,7 @@ import Voice, {
 import Tts from 'react-native-tts';
 import {streamChat} from '../api';
 import {ChatMessage, useAppContext} from '../context';
+import HandsFreeModal from './HandsFreeModal';
 
 const URGENCY_COLOR: Record<string, string> = {
   RED: '#f44336',
@@ -49,6 +50,7 @@ export default function ChatScreen() {
   const [streaming, setStreaming] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [handsFreeVisible, setHandsFreeVisible] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -188,10 +190,10 @@ export default function ChatScreen() {
           onSubmitEditing={send}
         />
         <Pressable
-          style={[styles.micBtn, isListening && styles.micBtnActive, streaming && styles.micBtnDisabled]}
-          onPress={toggleListening}
+          style={[styles.micBtn, streaming && styles.micBtnDisabled]}
+          onPress={() => setHandsFreeVisible(true)}
           disabled={streaming}>
-          <Text style={styles.micBtnText}>{isListening ? '🔴' : '🎙️'}</Text>
+          <Text style={styles.micBtnText}>🎙️</Text>
         </Pressable>
         <Pressable
           style={[styles.sendBtn, (streaming || !input.trim()) && styles.sendBtnDisabled]}
@@ -204,6 +206,11 @@ export default function ChatScreen() {
           )}
         </Pressable>
       </View>
+
+      <HandsFreeModal
+        visible={handsFreeVisible}
+        onClose={() => setHandsFreeVisible(false)}
+      />
     </KeyboardAvoidingView>
   );
 }
