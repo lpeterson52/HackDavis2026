@@ -38,7 +38,7 @@
       "why": "Arterial bleeds are more immediately life-threatening and need tourniquet faster",
       "response_guides": [
         {
-          "if_answer_contains": ["bright", "pulsing", "spurting", "pulsating", "gushing", "squirting"],
+          "if_answer_contains": ["bright red", "pulsing", "spurting", "pulsating", "gushing", "squirting", "shooting out"],
           "urgency_escalate": "RED",
           "note": "Arterial bleed suspected — maximum urgency, apply tourniquet immediately for limb wounds"
         }

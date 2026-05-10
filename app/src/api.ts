@@ -4,6 +4,9 @@ export interface SessionState {
   matched_condition_id: string | null;
   asked_question_ids: string[];
   urgency: string | null;
+  facts: Record<string, string>;
+  symptoms: string[];
+  called_911: boolean;
 }
 
 export interface ChatMeta {
@@ -11,6 +14,9 @@ export interface ChatMeta {
   matched_condition_id: string | null;
   escalation_note: string | null;
   next_question_id: string | null;
+  new_facts: Record<string, string> | null;
+  symptoms: string[] | null;
+  called_911: boolean | null;
 }
 
 export interface Slide {
@@ -90,9 +96,12 @@ export function streamChat(
     matched_condition_id: null,
     escalation_note: null,
     next_question_id: null,
+    new_facts: null,
+    symptoms: null,
+    called_911: null,
   };
 
-  type Chunk = { token: string; done: boolean; urgency?: string; matched_condition_id?: string; escalation_note?: string; next_question_id?: string };
+  type Chunk = { token: string; done: boolean; urgency?: string; matched_condition_id?: string; escalation_note?: string; next_question_id?: string; new_facts?: Record<string, string>; symptoms?: string[]; called_911?: boolean };
 
   return ndjsonXhr<Chunk>(
     'POST',
@@ -105,6 +114,9 @@ export function streamChat(
           matched_condition_id: chunk.matched_condition_id ?? null,
           escalation_note: chunk.escalation_note ?? null,
           next_question_id: chunk.next_question_id ?? null,
+          new_facts: chunk.new_facts ?? null,
+          symptoms: chunk.symptoms ?? null,
+          called_911: chunk.called_911 ?? null,
         };
       } else if (chunk.token) {
         onToken(chunk.token);

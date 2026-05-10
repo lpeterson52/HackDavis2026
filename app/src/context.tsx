@@ -33,6 +33,9 @@ const EMPTY_SESSION: SessionState = {
   matched_condition_id: null,
   asked_question_ids: [],
   urgency: null,
+  facts: {},
+  symptoms: [],
+  called_911: false,
 };
 
 export function AppProvider({children}: {children: ReactNode}) {
@@ -72,6 +75,9 @@ export function AppProvider({children}: {children: ReactNode}) {
         ? [...prev.asked_question_ids, meta.next_question_id]
         : prev.asked_question_ids,
       urgency: meta.urgency,
+      facts: meta.new_facts ? {...prev.facts, ...meta.new_facts} : prev.facts,
+      symptoms: meta.symptoms ?? prev.symptoms,
+      called_911: meta.called_911 ?? prev.called_911,
     }));
   }, []);
 

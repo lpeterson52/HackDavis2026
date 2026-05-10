@@ -9,12 +9,12 @@
       "why": "Respiratory or cardiovascular involvement confirms anaphylaxis — epinephrine is required",
       "response_guides": [
         {
-          "if_answer_contains": ["yes", "can't breathe", "throat closing", "wheezing", "tight", "hard to breathe", "trouble breathing"],
+          "if_answer_contains": ["can't breathe", "throat closing", "throat tightening", "wheezing", "chest tight", "hard to breathe", "trouble breathing", "difficulty breathing", "shortness of breath", "gasping"],
           "urgency_escalate": "RED",
           "note": "Respiratory compromise confirmed — EpiPen immediately if available, call 911"
         },
         {
-          "if_answer_contains": ["no", "just hives", "only itching", "not breathing problems"],
+          "if_answer_contains": ["just hives", "only itching", "only swelling", "no breathing problems", "breathing fine", "breathing okay"],
           "urgency_escalate": "ORANGE",
           "note": "Isolated hives without respiratory symptoms — monitor closely for escalation, still seek care"
         }
@@ -28,12 +28,12 @@
       "why": "EpiPen is the only effective first-line treatment for anaphylaxis",
       "response_guides": [
         {
-          "if_answer_contains": ["yes", "have one", "found it", "in the bag", "in the pack"],
+          "if_answer_contains": ["have one", "found it", "in the bag", "in the pack", "has an EpiPen", "found an EpiPen", "got one"],
           "urgency_escalate": "RED",
           "note": "Use EpiPen NOW — inject outer thigh, hold 10 seconds, then call 911"
         },
         {
-          "if_answer_contains": ["no", "don't have", "can't find", "left it", "none"],
+          "if_answer_contains": ["no EpiPen", "don't have one", "can't find it", "left it", "no epinephrine", "nothing like that"],
           "urgency_escalate": "RED",
           "note": "No EpiPen available — call 911 immediately, anaphylaxis cannot be managed without epinephrine"
         }
@@ -47,9 +47,14 @@
       "why": "EMS needs the allergen for treatment planning; some triggers need immediate removal",
       "response_guides": [
         {
-          "if_answer_contains": ["medication", "drug", "injection", "iv", "shot", "vaccine"],
+          "if_answer_contains": ["medication", "drug", "injection", "iv infusion", "vaccine", "antibiotic"],
           "urgency_escalate": "RED",
           "note": "Medication-induced anaphylaxis — often more severe and rapid, maximum urgency"
+        },
+        {
+          "if_answer_contains": ["bee sting", "wasp", "hornet", "insect sting", "stung"],
+          "urgency_escalate": "RED",
+          "note": "Insect sting — remove stinger by scraping if visible, do not squeeze. EpiPen if available."
         }
       ]
     }

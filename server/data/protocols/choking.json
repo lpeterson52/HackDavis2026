@@ -35,12 +35,20 @@
       "order": 4,
       "type": "action",
       "layout": "step",
+      "title": "Ask for Consent",
+      "content": "Before touching them, ask clearly: 'I know first aid — are you okay with me helping you?'\n\nIf they nod, speak, or cannot respond at all: proceed to back blows.\n\nIf they refuse: do not touch them. Stay close, keep them calm, and wait for 911.",
+      "tts_text": "Ask them: I know first aid — are you okay with me helping you? If they consent or can't respond, proceed. If they refuse, stay with them and wait for 911."
+    },
+    {
+      "order": 5,
+      "type": "action",
+      "layout": "step",
       "title": "5 Back Blows",
       "content": "Stand to the side and slightly behind the person. Support their chest with one hand and lean them forward. Give 5 firm blows between the shoulder blades with the heel of your other hand.",
       "tts_text": "Give 5 firm blows between the shoulder blades with the heel of your hand."
     },
     {
-      "order": 5,
+      "order": 6,
       "type": "action",
       "layout": "step",
       "title": "5 Abdominal Thrusts (Heimlich)",
@@ -49,7 +57,7 @@
       "tts_text": "Place fist just above the navel. Cover with other hand. Give 5 sharp upward thrusts."
     },
     {
-      "order": 6,
+      "order": 7,
       "type": "action",
       "layout": "step",
       "title": "Alternate and Repeat",
@@ -58,7 +66,7 @@
       "tts_text": "Keep alternating back blows and abdominal thrusts. If person goes unconscious, start CPR."
     },
     {
-      "order": 7,
+      "order": 8,
       "type": "completion",
       "layout": "done",
       "title": "Object Cleared",

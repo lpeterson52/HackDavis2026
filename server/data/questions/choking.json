@@ -2,19 +2,38 @@
   "id": "choking",
   "ask_next": [
     {
-      "id": "chk_q1",
+      "id": "chk_consent",
       "priority": 1,
+      "question": "Are you okay with me helping you?",
+      "purpose": "Obtain verbal consent before physical intervention on a conscious patient",
+      "why": "Must ask consent before touching a conscious adult. Skip only if they are unconscious or cannot respond.",
+      "response_guides": [
+        {
+          "if_answer_contains": ["yes", "okay", "ok", "please", "sure", "go ahead", "help me", "do it", "yeah"],
+          "urgency_escalate": null,
+          "note": "Consent given — before starting back blows, ask the next clarifying question"
+        },
+        {
+          "if_answer_contains": ["no", "don't touch", "stop", "refuse", "leave me", "don't"],
+          "urgency_escalate": null,
+          "note": "Consent refused — do not touch patient. Stay with them, keep them calm, 911 is on the way."
+        }
+      ]
+    },
+    {
+      "id": "chk_q1",
+      "priority": 2,
       "question": "Can the person make any sound, cough, or speak at all?",
       "purpose": "Distinguish complete from partial airway obstruction",
       "why": "Complete obstruction is immediately life-threatening; partial can often be self-cleared",
       "response_guides": [
         {
-          "if_answer_contains": ["no", "nothing", "silent", "can't", "cannot", "not at all"],
+          "if_answer_contains": ["nothing", "silent", "can't make a sound", "cannot speak", "not at all", "totally silent", "no sound", "no cough", "can't cough"],
           "urgency_escalate": "RED",
           "note": "Complete airway obstruction — begin back blows and abdominal thrusts immediately"
         },
         {
-          "if_answer_contains": ["yes", "a little", "coughing", "wheezing", "weakly", "some sound"],
+          "if_answer_contains": ["coughing", "wheezing", "a little sound", "some sound", "weakly coughing", "making sounds", "can speak a little"],
           "urgency_escalate": "ORANGE",
           "note": "Partial obstruction — encourage coughing, standby to assist if worsens to silent"
         }
@@ -22,27 +41,32 @@
     },
     {
       "id": "chk_q2",
-      "priority": 2,
+      "priority": 3,
       "question": "Is the person still conscious and standing, or have they gone limp or unconscious?",
       "purpose": "Determine if CPR transition is needed",
       "why": "Unconscious choking requires different protocol — lower to ground and start CPR",
       "response_guides": [
         {
-          "if_answer_contains": ["unconscious", "passed out", "not responsive", "collapsed", "limp", "fell"],
+          "if_answer_contains": ["unconscious", "passed out", "not responsive", "collapsed", "went limp", "fell down", "on the ground"],
           "urgency_escalate": "RED",
           "note": "Lower carefully to ground. Start CPR. Check mouth for visible object before each breath attempt."
+        },
+        {
+          "if_answer_contains": ["still standing", "still conscious", "awake", "alert", "responsive", "standing up"],
+          "urgency_escalate": "RED",
+          "note": "Conscious choking — continue alternating 5 back blows and 5 abdominal thrusts"
         }
       ]
     },
     {
       "id": "chk_q3",
-      "priority": 3,
+      "priority": 4,
       "question": "What did they choke on, and how long ago did it start?",
       "purpose": "Assess urgency and EMS information",
       "why": "Duration and object type help EMS prepare and set priority",
       "response_guides": [
         {
-          "if_answer_contains": ["long time", "minutes", "5 minutes", "long", "been a while"],
+          "if_answer_contains": ["5 minutes ago", "several minutes", "a few minutes", "been a while", "long time ago", "a long time"],
           "urgency_escalate": "RED",
           "note": "Prolonged obstruction — hypoxia risk increasing, escalate immediately"
         }

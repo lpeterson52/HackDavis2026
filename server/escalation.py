@@ -39,6 +39,27 @@ def check_immediate_escalation(text: str) -> dict | None:
     return None
 
 
+def extract_facts(text: str, condition_id: str, data_dir: Path, last_asked_question_id: str | None) -> dict[str, str]:
+    """Return {question_id: guide_note} for the last asked question if the user's answer matches a response guide."""
+    import re
+    if not last_asked_question_id:
+        return {}
+    path = data_dir / "questions" / f"{condition_id}.json"
+    if not path.exists():
+        return {}
+    questions = json.loads(path.read_text())
+    text_lower = text.lower()
+    for q in questions.get("ask_next", []):
+        if q["id"] != last_asked_question_id:
+            continue
+        for guide in q.get("response_guides", []):
+            for phrase in guide.get("if_answer_contains", []):
+                pattern = r"\b" + re.escape(phrase.lower()) + r"\b"
+                if re.search(pattern, text_lower):
+                    return {last_asked_question_id: guide["note"]}
+    return {}
+
+
 def check_escalation(text: str, condition_id: str, data_dir: Path) -> dict | None:
     path = data_dir / "questions" / f"{condition_id}.json"
     if not path.exists():

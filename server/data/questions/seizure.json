@@ -9,9 +9,14 @@
       "why": "Seizures >5 minutes = status epilepticus, a life-threatening neurological emergency",
       "response_guides": [
         {
-          "if_answer_contains": ["5 minutes", "6", "7", "8", "9", "10", "more than 5", "over 5", "still going", "won't stop", "long time"],
+          "if_answer_contains": ["5 minutes", "6 minutes", "7 minutes", "8 minutes", "9 minutes", "10 minutes", "more than 5", "over 5", "still going", "won't stop", "long time", "doesn't stop", "keeps going"],
           "urgency_escalate": "RED",
           "note": "Possible status epilepticus — call 911 immediately"
+        },
+        {
+          "if_answer_contains": ["just started", "1 minute", "2 minutes", "3 minutes", "4 minutes", "under 5", "less than 5", "a few seconds", "30 seconds"],
+          "urgency_escalate": "ORANGE",
+          "note": "Short duration so far — monitor closely, call 911 if it reaches 5 minutes or stops and person does not regain consciousness"
         }
       ]
     },
@@ -23,12 +28,12 @@
       "why": "First seizures always require 911; known epileptics may have Diastat or other rescue medication",
       "response_guides": [
         {
-          "if_answer_contains": ["first", "never before", "first time", "don't know", "not sure"],
+          "if_answer_contains": ["first time", "never had", "first seizure", "don't know", "not sure", "unknown"],
           "urgency_escalate": "RED",
           "note": "First or unknown seizure — call 911 regardless of duration"
         },
         {
-          "if_answer_contains": ["has them", "epileptic", "epilepsy", "before", "has a history", "diagnosed"],
+          "if_answer_contains": ["has them", "epileptic", "epilepsy", "has a history", "diagnosed", "known condition", "takes medication for"],
           "urgency_escalate": "ORANGE",
           "note": "Known epileptic — follow their seizure action plan if available, call 911 if >5 min or unusual"
         }
@@ -42,9 +47,14 @@
       "why": "Respiratory arrest can follow tonic-clonic seizures and requires immediate CPR",
       "response_guides": [
         {
-          "if_answer_contains": ["no", "not breathing", "stopped breathing", "doesn't seem to be breathing"],
+          "if_answer_contains": ["not breathing", "stopped breathing", "doesn't seem to be breathing", "no breath", "can't tell", "not sure"],
           "urgency_escalate": "RED",
           "note": "Respiratory arrest post-seizure — begin CPR immediately, call 911"
+        },
+        {
+          "if_answer_contains": ["yes breathing", "breathing normally", "breathing okay", "breathing fine", "can see chest moving"],
+          "urgency_escalate": "ORANGE",
+          "note": "Breathing present — place in recovery position (on side), stay with them through postictal phase"
         }
       ]
     }

@@ -4,12 +4,15 @@
   "urgency_floor": "RED",
   "search_tags": [
     "chok", "airway", "swallow", "stuck", "throat", "heimlich", "obstruction",
-    "food stuck", "can't breathe", "coughing", "gagging"
+    "food stuck", "can't breathe", "coughing", "gagging", "grab", "clutch", "silent"
   ],
   "common_phrases": [
     "something stuck in throat", "can't breathe", "choking", "swallowed wrong",
-    "food stuck", "turned blue from choking", "clutching throat",
-    "universal choking sign", "can't speak", "silent cough"
+    "food stuck", "turned blue from choking", "clutching throat", "clutching their throat",
+    "grabbing throat", "grabbing their throat", "grabbing his throat", "grabbing her throat",
+    "holding throat", "holding their throat", "hands on throat", "hand to throat",
+    "hands to throat", "not talking", "not speaking", "can't talk", "can't speak",
+    "won't talk", "universal choking sign", "silent cough", "making no sound"
   ],
   "recognize": {
     "signs": [

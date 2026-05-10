@@ -9,12 +9,12 @@
       "why": "Agonal gasps (occasional gasps) are not normal breathing — CPR should continue",
       "response_guides": [
         {
-          "if_answer_contains": ["no", "not breathing", "stopped breathing", "barely", "gasping", "occasionally"],
+          "if_answer_contains": ["not breathing", "stopped breathing", "barely breathing", "gasping", "agonal", "no breath", "can't tell if breathing"],
           "urgency_escalate": "RED",
           "note": "Not breathing or agonal gasps — continue CPR without pause"
         },
         {
-          "if_answer_contains": ["yes", "breathing", "breathing now"],
+          "if_answer_contains": ["breathing now", "started breathing", "breathing again", "breathing normally", "chest is rising"],
           "urgency_escalate": "ORANGE",
           "note": "Person has resumed breathing — stop compressions, place in recovery position, monitor closely"
         }
@@ -28,9 +28,14 @@
       "why": "Early defibrillation within 3-5 minutes dramatically improves survival",
       "response_guides": [
         {
-          "if_answer_contains": ["yes", "nearby", "found", "have one", "coming"],
+          "if_answer_contains": ["have one", "found one", "found it", "nearby", "on the way", "someone has it", "bringing one"],
           "urgency_escalate": "RED",
           "note": "Use AED as soon as it arrives — apply pads, follow prompts, resume CPR immediately after shock"
+        },
+        {
+          "if_answer_contains": ["no AED", "don't have one", "can't find one", "no defibrillator", "nothing like that"],
+          "urgency_escalate": "RED",
+          "note": "No AED available — continue CPR without interruption until EMS arrives"
         }
       ]
     },
@@ -42,12 +47,12 @@
       "why": "Traumatic arrest requires minimal head tilt; cardiac arrest benefits from standard protocol",
       "response_guides": [
         {
-          "if_answer_contains": ["trauma", "fall", "hit", "accident", "injury", "crash", "struck"],
+          "if_answer_contains": ["trauma", "fell", "hit head", "accident", "injury", "crash", "struck", "impact"],
           "urgency_escalate": "RED",
           "note": "Traumatic arrest — minimize cervical spine movement; use jaw thrust instead of head tilt if possible"
         },
         {
-          "if_answer_contains": ["drowning", "drowned", "water"],
+          "if_answer_contains": ["drowning", "drowned", "water", "underwater", "submerged"],
           "urgency_escalate": "RED",
           "note": "Drowning cardiac arrest — give 5 rescue breaths before starting compressions (modified protocol)"
         }

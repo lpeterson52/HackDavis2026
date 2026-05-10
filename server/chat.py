@@ -22,6 +22,9 @@ class SessionState(BaseModel):
     matched_condition_id: str | None = None
     asked_question_ids: list[str] = []
     urgency: str | None = None
+    facts: dict[str, str] = {}
+    symptoms: list[str] = []
+    called_911: bool = False
 
 
 class HistoryMessage(BaseModel):
@@ -86,9 +89,23 @@ async def chat(req: ChatRequest):
 
     escalation_note = (immediate or cond_escalation or {}).get("note")
 
-    # 4. Build messages array for /api/chat
+    # 4. Extract new facts from the user's answer to the last asked question
+    last_asked_id = req.session_state.asked_question_ids[-1] if req.session_state.asked_question_ids else None
+    new_facts: dict[str, str] = {}
+    if matched_id and last_asked_id:
+        new_facts = escalation_module.extract_facts(req.message, matched_id, DATA_DIR, last_asked_id)
+
+    # Merge with accumulated facts for this turn's context
+    all_facts = {**req.session_state.facts, **new_facts}
+
+    # Append current message to symptom log
+    updated_symptoms = req.session_state.symptoms + [req.message]
+
     context_block = build_context_block(
-        condition or {}, actions, questions_data, req.session_state.asked_question_ids
+        condition or {}, actions, questions_data, req.session_state.asked_question_ids, last_asked_id,
+        all_facts or None,
+        updated_symptoms,
+        req.session_state.called_911,
     )
     current_user_content = build_prompt(req.message, context_block, floor_urgency)
 
@@ -131,6 +148,7 @@ async def chat(req: ChatRequest):
         full_text = "".join(accumulated)
         gemma_urgency = _parse_urgency(full_text)
         final_urgency = escalation_module.max_urgency(floor_urgency, gemma_urgency)
+        called_911_updated = req.session_state.called_911 or (final_urgency == "RED")
 
         yield json.dumps({
             "token": "",
@@ -139,6 +157,9 @@ async def chat(req: ChatRequest):
             "matched_condition_id": matched_id,
             "escalation_note": escalation_note,
             "next_question_id": next_question["id"] if next_question else None,
+            "new_facts": new_facts,
+            "symptoms": updated_symptoms,
+            "called_911": called_911_updated,
         }) + "\n"
 
     return StreamingResponse(stream(), media_type="application/x-ndjson")

@@ -3,6 +3,7 @@
   "immediate_actions": [
     {"step": "Encourage coughing if person can still cough (mild obstruction)", "critical": true, "note": "Do not intervene if they can cough forcefully"},
     {"step": "Call 911 if person cannot breathe, cough, or speak (severe obstruction)", "critical": true, "note": "Put phone on speaker"},
+    {"step": "Ask for consent if patient is conscious: 'I know first aid — are you okay with me helping you?'", "critical": true, "note": "Proceed if they consent, nod, or cannot respond. Do not touch if they refuse."},
     {"step": "5 firm back blows between shoulder blades with heel of hand", "critical": true, "note": "Lean person forward, support chest"},
     {"step": "5 abdominal thrusts: fist above navel, quick upward-inward thrusts", "critical": true, "note": "Alternate with back blows"},
     {"step": "Check mouth after each cycle — remove only visible objects", "critical": true, "note": "Never do blind finger sweeps"}
