@@ -19,8 +19,6 @@ import Tts from 'react-native-tts';
 import {streamChat} from '../api';
 import {ChatMessage, useAppContext} from '../context';
 
-type HandsFreePhase = 'idle' | 'listening' | 'thinking' | 'speaking';
-
 const URGENCY_COLOR: Record<string, string> = {
   RED: '#f44336',
   ORANGE: '#ff9800',
@@ -51,77 +49,33 @@ export default function ChatScreen() {
   const [streaming, setStreaming] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
-  const [handsFree, setHandsFree] = useState(false);
-  const [hfPhase, setHfPhase] = useState<HandsFreePhase>('idle');
 
   const scrollRef = useRef<ScrollView>(null);
-  const sendRef = useRef<(() => void) | null>(null);
-  // Mirrors handsFree/streaming for use inside event callbacks that close over stale state.
-  const handsFreeRef = useRef(false);
-  const streamingRef = useRef(false);
-  // Latest voice transcript — avoids stale-state race between onSpeechResults and onSpeechEnd.
-  const transcriptRef = useRef('');
-
-  useEffect(() => {
-    handsFreeRef.current = handsFree;
-    if (!handsFree) setHfPhase('idle');
-  }, [handsFree]);
-
-  useEffect(() => {
-    streamingRef.current = streaming;
-  }, [streaming]);
 
   useEffect(() => {
     Voice.onSpeechResults = (e: SpeechResultsEvent) => {
       const transcript = e.value?.[0] ?? '';
-      transcriptRef.current = transcript;
-      if (transcript) {
-        setInput(transcript);
-      }
+      if (transcript) setInput(transcript);
     };
     Voice.onSpeechEnd = () => {
       setIsListening(false);
-      // Small delay so onSpeechResults state update settles before send reads it.
-      setTimeout(() => sendRef.current?.(), 80);
     };
     Voice.onSpeechError = (e: SpeechErrorEvent) => {
       setIsListening(false);
-      if (handsFreeRef.current) {
-        // Transient noise — re-arm instead of surfacing an error.
-        setTimeout(() => startListening(), 500);
-      } else {
-        setVoiceError(e.error?.message ?? 'Voice recognition failed');
-      }
+      setVoiceError(e.error?.message ?? 'Voice recognition failed');
     };
-
-    const ttsFinish = Tts.addEventListener('tts-finish', () => {
-      if (handsFreeRef.current) {
-        setHfPhase('listening');
-        startListening();
-      }
-    });
-    const ttsCancel = Tts.addEventListener('tts-cancel', () => {
-      if (handsFreeRef.current) {
-        setHfPhase('listening');
-        startListening();
-      }
-    });
 
     return () => {
       Voice.destroy().then(Voice.removeAllListeners);
-      ttsFinish.remove();
-      ttsCancel.remove();
     };
   }, []);
 
   async function startListening() {
-    if (streamingRef.current) return;
+    if (streaming) return;
     setVoiceError(null);
-    transcriptRef.current = '';
     try {
       await Voice.start('en-US');
       setIsListening(true);
-      setHfPhase('listening');
     } catch {
       setVoiceError('Microphone unavailable — type instead');
     }
@@ -136,31 +90,14 @@ export default function ChatScreen() {
     }
   }
 
-  function toggleHandsFree() {
-    const next = !handsFree;
-    setHandsFree(next);
-    if (next) {
-      startListening();
-    } else {
-      Voice.stop().catch(() => {});
-      Tts.stop();
-      setIsListening(false);
-    }
-  }
-
   async function send() {
-    const text = (input || transcriptRef.current).trim();
+    const text = input.trim();
     if (!text || streaming) return;
 
-    // Capture history BEFORE appending the new messages so the backend
-    // receives all completed prior turns, not the in-progress ones.
     const history = messages.map(m => ({role: m.role as 'user' | 'assistant', content: m.content}));
 
-    transcriptRef.current = '';
     setInput('');
     setStreaming(true);
-    streamingRef.current = true;
-    if (handsFreeRef.current) setHfPhase('thinking');
     appendUserMessage(text);
     const assistantId = startAssistantMessage();
 
@@ -171,28 +108,15 @@ export default function ChatScreen() {
       });
       finalizeMessage(assistantId, meta);
       if (meta.spoken_text) {
-        if (handsFreeRef.current) setHfPhase('speaking');
         Tts.speak(meta.spoken_text);
-        // tts-finish listener will re-arm the mic for hands-free.
-      } else if (handsFreeRef.current) {
-        // No TTS — re-arm immediately.
-        setHfPhase('listening');
-        startListening();
       }
     } catch (e: any) {
       appendToMessage(assistantId, `_Error: ${e.message}_`);
-      if (handsFreeRef.current) {
-        setHfPhase('listening');
-        startListening();
-      }
     } finally {
       setStreaming(false);
-      streamingRef.current = false;
       scrollRef.current?.scrollToEnd({animated: false});
     }
   }
-
-  sendRef.current = send;
 
   const urgencyColor = currentUrgency ? URGENCY_COLOR[currentUrgency] : null;
 
@@ -250,98 +174,39 @@ export default function ChatScreen() {
         </View>
       )}
 
-      {/* Hands-free phase indicator */}
-      {handsFree && (
-        <HandsFreeBar phase={hfPhase} onStop={toggleHandsFree} />
-      )}
-
-      {/* Input row — hidden in hands-free mode */}
-      {!handsFree && (
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Describe symptoms…"
-            placeholderTextColor="#555"
-            multiline
-            editable={!streaming}
-            blurOnSubmit={false}
-            onSubmitEditing={send}
-          />
-          <Pressable
-            style={[styles.micBtn, isListening && styles.micBtnActive, streaming && styles.micBtnDisabled]}
-            onPress={toggleListening}
-            disabled={streaming}>
-            <Text style={styles.micBtnText}>{isListening ? '🔴' : '🎙️'}</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.sendBtn, (streaming || !input.trim()) && styles.sendBtnDisabled]}
-            onPress={send}
-            disabled={streaming || !input.trim()}>
-            {streaming ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.sendBtnText}>Send</Text>
-            )}
-          </Pressable>
-        </View>
-      )}
-
-      {/* Hands-free activation strip */}
-      {!handsFree && (
-        <Pressable style={styles.hfActivateBtn} onPress={toggleHandsFree}>
-          <Text style={styles.hfActivateText}>🎙 Go Hands-Free</Text>
+      {/* Input row */}
+      <View style={styles.inputRow}>
+        <TextInput
+          style={styles.input}
+          value={input}
+          onChangeText={setInput}
+          placeholder="Describe symptoms…"
+          placeholderTextColor="#555"
+          multiline
+          editable={!streaming}
+          blurOnSubmit={false}
+          onSubmitEditing={send}
+        />
+        <Pressable
+          style={[styles.micBtn, isListening && styles.micBtnActive, streaming && styles.micBtnDisabled]}
+          onPress={toggleListening}
+          disabled={streaming}>
+          <Text style={styles.micBtnText}>{isListening ? '🔴' : '🎙️'}</Text>
         </Pressable>
-      )}
+        <Pressable
+          style={[styles.sendBtn, (streaming || !input.trim()) && styles.sendBtnDisabled]}
+          onPress={send}
+          disabled={streaming || !input.trim()}>
+          {streaming ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.sendBtnText}>Send</Text>
+          )}
+        </Pressable>
+      </View>
     </KeyboardAvoidingView>
   );
 }
-
-const HF_PHASE_CONFIG: Record<HandsFreePhase, {label: string; color: string; icon: string}> = {
-  idle:      {label: 'Hands-Free Off',  color: '#333',     icon: '🎙️'},
-  listening: {label: 'Listening…',      color: '#1565c0',  icon: '👂'},
-  thinking:  {label: 'Thinking…',       color: '#6a1b9a',  icon: '🧠'},
-  speaking:  {label: 'Speaking…',       color: '#2e7d32',  icon: '🔊'},
-};
-
-function HandsFreeBar({phase, onStop}: {phase: HandsFreePhase; onStop: () => void}) {
-  const cfg = HF_PHASE_CONFIG[phase];
-  return (
-    <View style={[hfBarStyles.bar, {borderTopColor: cfg.color}]}>
-      <View style={hfBarStyles.left}>
-        <View style={[hfBarStyles.dot, {backgroundColor: cfg.color}]} />
-        <Text style={hfBarStyles.label}>{cfg.icon}  {cfg.label}</Text>
-      </View>
-      <Pressable style={hfBarStyles.stopBtn} onPress={onStop}>
-        <Text style={hfBarStyles.stopText}>Exit</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-const hfBarStyles = StyleSheet.create({
-  bar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#0d0d0d',
-    borderTopWidth: 2,
-  },
-  left: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  dot: {width: 8, height: 8, borderRadius: 4},
-  label: {color: '#ccc', fontSize: 14, fontWeight: '600'},
-  stopBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#444',
-  },
-  stopText: {color: '#888', fontSize: 12},
-});
 
 function EmptyState() {
   return (
@@ -539,15 +404,6 @@ const styles = StyleSheet.create({
     borderTopColor: '#3a2000',
   },
   voiceErrorText: {color: '#ff9800', fontSize: 12, textAlign: 'center'},
-
-  hfActivateBtn: {
-    alignItems: 'center',
-    paddingVertical: 8,
-    backgroundColor: '#0d1a2a',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#1565c0',
-  },
-  hfActivateText: {color: '#1e88e5', fontSize: 13, fontWeight: '600'},
 });
 
 const mdStyles = StyleSheet.create({
