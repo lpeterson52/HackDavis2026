@@ -1,0 +1,22 @@
+{
+  "id": "burns",
+  "name": "Burns",
+  "urgency_floor": "YELLOW",
+  "search_tags": [
+    "burn", "scald", "fire", "flame", "boiling", "hot", "chemical burn", "blister",
+    "singed", "scalding", "thermal"
+  ],
+  "common_phrases": [
+    "burned", "burn on skin", "scalded", "touched hot stove", "fire burn",
+    "blisters from burn", "chemical spill on skin", "sunburn bad",
+    "skin is burned", "got burned"
+  ],
+  "recognize": {
+    "signs": [
+      "1st degree: Redness, minor swelling, pain — outer layer only",
+      "2nd degree: Blisters, deep redness, wet/shiny appearance",
+      "3rd degree: White, brown, or charred skin — may be painless (nerve damage)"
+    ],
+    "criteria": "Heat, chemical, or electrical injury to skin. Severity determined by depth and body surface area."
+  }
+}

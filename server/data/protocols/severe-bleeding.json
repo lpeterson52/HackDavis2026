@@ -1,0 +1,75 @@
+{
+  "id": "severe-bleeding",
+  "title": "Severe Bleeding",
+  "source": "American Red Cross / Stop the Bleed",
+  "slides": [
+    {
+      "order": 1,
+      "type": "action",
+      "layout": "step",
+      "title": "Call 911",
+      "content": "Call emergency services immediately. Tell them your location and that there is severe uncontrolled bleeding.",
+      "warning": "Do not delay applying pressure while waiting for help.",
+      "tts_text": "Call 911 immediately. Tell them your location and that there is severe bleeding."
+    },
+    {
+      "order": 2,
+      "type": "action",
+      "layout": "step",
+      "title": "Apply Direct Pressure",
+      "content": "Place a clean cloth, gauze, or bandage directly on the wound. Press firmly with both hands. Maintain constant pressure for at least 15 minutes.",
+      "warning": "If the cloth soaks through, add more on top — do NOT remove the original dressing. Removing it can disrupt the clot.",
+      "tts_text": "Place a clean cloth on the wound and press firmly. Do not lift the cloth. Add more material on top if it soaks through."
+    },
+    {
+      "order": 3,
+      "type": "decision",
+      "layout": "branch",
+      "title": "Is the wound on an arm or leg?",
+      "content": "Location determines whether a tourniquet is an option.",
+      "decision": {
+        "yes": { "next_slide": 4, "label": "Yes — limb (arm or leg)" },
+        "no": { "next_slide": 5, "label": "No — torso, neck, or groin" }
+      },
+      "tts_text": "Is the wound on an arm or a leg?"
+    },
+    {
+      "order": 4,
+      "type": "action",
+      "layout": "step",
+      "title": "Apply a Tourniquet (Limb Wounds)",
+      "content": "If bleeding will not stop with direct pressure after 5 minutes: Apply tourniquet 2–3 inches above the wound. Never place over a joint. Tighten until bleeding stops. Write the time applied on the person's skin.",
+      "warning": "A tourniquet is correct for limb bleeds that won't stop. Do not remove it once applied — only EMS should remove it.",
+      "tts_text": "Apply tourniquet 2 to 3 inches above the wound. Tighten until bleeding stops. Write the time on the skin."
+    },
+    {
+      "order": 5,
+      "type": "action",
+      "layout": "step",
+      "title": "Torso / Neck / Groin Bleeding",
+      "content": "Maintain firm direct pressure continuously. For deep groin or armpit wounds: pack gauze tightly into wound and press firmly. Do NOT pack neck wounds — gentle pressure only. Do not release pressure for any reason.",
+      "warning": "Torso and neck wounds require emergency surgery. Your only job is to maintain pressure until EMS arrives.",
+      "tts_text": "Maintain firm direct pressure. For groin or armpit wounds, pack gauze in tightly and hold firm. Never pack a neck wound."
+    },
+    {
+      "order": 6,
+      "type": "action",
+      "layout": "step",
+      "title": "Treat for Shock",
+      "content": "Lay the person flat on their back. If no spine injury suspected, elevate legs about 12 inches. Keep them warm with a blanket or jacket. Do not give food or water. Speak calmly to keep them still.",
+      "tts_text": "Lay the person flat. Elevate their legs. Keep them warm. Do not give food or water."
+    },
+    {
+      "order": 7,
+      "type": "completion",
+      "layout": "done",
+      "title": "Continue Until EMS Arrives",
+      "content": "Maintain pressure without stopping. Monitor breathing and level of consciousness. If person stops breathing and has no pulse, begin CPR.",
+      "completion": {
+        "message": "Keep pressure on wound. Help is on the way.",
+        "next_protocol": "cpr"
+      },
+      "tts_text": "Keep pressure on the wound. Monitor breathing. Emergency services are on the way."
+    }
+  ]
+}

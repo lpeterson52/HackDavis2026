@@ -11,92 +11,133 @@ import {
   View,
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
-import {InferenceClientImpl} from '../inference';
+import {streamChat} from '../api';
+import {ChatMessage, useAppContext} from '../context';
 
-type Status = 'idle' | 'connecting' | 'streaming' | 'error';
+const URGENCY_COLOR: Record<string, string> = {
+  RED: '#f44336',
+  ORANGE: '#ff9800',
+  YELLOW: '#ffc107',
+  GREEN: '#4caf50',
+};
+
+const URGENCY_LABEL: Record<string, string> = {
+  RED: '🚨 EMERGENCY',
+  ORANGE: '⚠️ URGENT',
+  YELLOW: '⚡ MONITOR',
+  GREEN: '✓ OK',
+};
 
 export default function ChatScreen() {
-  const [prompt, setPrompt] = useState('');
-  const [response, setResponse] = useState('');
-  const [status, setStatus] = useState<Status>('idle');
-  const [error, setError] = useState('');
-  const clientRef = useRef<InstanceType<typeof InferenceClientImpl> | null>(null);
+  const {
+    messages,
+    sessionState,
+    currentUrgency,
+    appendUserMessage,
+    startAssistantMessage,
+    appendToMessage,
+    finalizeMessage,
+    clearSession,
+  } = useAppContext();
+
+  const [input, setInput] = useState('');
+  const [streaming, setStreaming] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   async function send() {
-    const text = prompt.trim();
-    if (!text || status === 'streaming') return;
+    const text = input.trim();
+    if (!text || streaming) return;
 
-    setPrompt('');
-    setResponse('');
-    setError('');
-    setStatus('connecting');
+    // Capture history BEFORE appending the new messages so the backend
+    // receives all completed prior turns, not the in-progress ones.
+    const history = messages.map(m => ({role: m.role as 'user' | 'assistant', content: m.content}));
+
+    setInput('');
+    setStreaming(true);
+    appendUserMessage(text);
+    const assistantId = startAssistantMessage();
 
     try {
-      if (!clientRef.current) {
-        clientRef.current = new InferenceClientImpl();
-        await clientRef.current.initialize();
-      }
-
-      setStatus('streaming');
-      await clientRef.current.generate(text, {}, (token, done) => {
-        if (!done) {
-          setResponse(prev => prev + token);
-          scrollRef.current?.scrollToEnd({animated: false});
-        } else {
-          setStatus('idle');
-        }
+      const meta = await streamChat(text, sessionState, history, token => {
+        appendToMessage(assistantId, token);
+        scrollRef.current?.scrollToEnd({animated: false});
       });
+      finalizeMessage(assistantId, meta);
     } catch (e: any) {
-      setError(e.message ?? 'Unknown error');
-      setStatus('error');
-      clientRef.current = null;
+      appendToMessage(assistantId, `_Error: ${e.message}_`);
+    } finally {
+      setStreaming(false);
+      scrollRef.current?.scrollToEnd({animated: false});
     }
   }
 
-  const busy = status === 'connecting' || status === 'streaming';
+  const urgencyColor = currentUrgency ? URGENCY_COLOR[currentUrgency] : null;
 
   return (
     <KeyboardAvoidingView
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Inference Test</Text>
-        <StatusBadge status={status} />
+      {/* Header */}
+      <View style={[styles.header, urgencyColor ? {borderBottomColor: urgencyColor} : null]}>
+        <Text style={styles.title}>MedField</Text>
+        <View style={styles.headerRight}>
+          {currentUrgency && (
+            <View
+              style={[
+                styles.urgencyBadge,
+                {backgroundColor: urgencyColor ?? '#666'},
+              ]}>
+              <Text style={styles.urgencyText}>
+                {URGENCY_LABEL[currentUrgency] ?? currentUrgency}
+              </Text>
+            </View>
+          )}
+          {messages.length > 0 && !streaming && (
+            <Pressable style={styles.newBtn} onPress={clearSession}>
+              <Text style={styles.newBtnText}>New</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
 
+      {/* Message list */}
       <ScrollView
         ref={scrollRef}
-        style={styles.responseArea}
-        contentContainerStyle={styles.responseContent}>
-        {response ? (
-          <Markdown style={markdownStyles}>{response}</Markdown>
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled">
+        {messages.length === 0 ? (
+          <EmptyState />
         ) : (
-          <Text style={styles.placeholder}>
-            {status === 'connecting'
-              ? 'Connecting to server…'
-              : 'Response will appear here.'}
-          </Text>
+          messages.map(msg => <MessageBubble key={msg.id} message={msg} />)
         )}
-        {status === 'error' && <Text style={styles.errorText}>{error}</Text>}
       </ScrollView>
 
+      {/* Disclaimer */}
+      <View style={styles.disclaimer}>
+        <Text style={styles.disclaimerText}>
+          ⚠️ AI guidance only — not a substitute for professional medical care
+        </Text>
+      </View>
+
+      {/* Input */}
       <View style={styles.inputRow}>
         <TextInput
           style={styles.input}
-          value={prompt}
-          onChangeText={setPrompt}
-          placeholder="Enter a prompt…"
-          placeholderTextColor="#888"
+          value={input}
+          onChangeText={setInput}
+          placeholder="Describe symptoms…"
+          placeholderTextColor="#555"
           multiline
-          editable={!busy}
+          editable={!streaming}
+          blurOnSubmit={false}
           onSubmitEditing={send}
         />
         <Pressable
-          style={[styles.sendBtn, busy && styles.sendBtnDisabled]}
+          style={[styles.sendBtn, (streaming || !input.trim()) && styles.sendBtnDisabled]}
           onPress={send}
-          disabled={busy}>
-          {busy ? (
+          disabled={streaming || !input.trim()}>
+          {streaming ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
             <Text style={styles.sendBtnText}>Send</Text>
@@ -107,93 +148,206 @@ export default function ChatScreen() {
   );
 }
 
-function StatusBadge({status}: {status: Status}) {
-  const label: Record<Status, string> = {
-    idle: 'Ready',
-    connecting: 'Connecting',
-    streaming: 'Streaming',
-    error: 'Error',
-  };
-  const color: Record<Status, string> = {
-    idle: '#4caf50',
-    connecting: '#ff9800',
-    streaming: '#2196f3',
-    error: '#f44336',
-  };
+function EmptyState() {
   return (
-    <View style={[styles.badge, {backgroundColor: color[status]}]}>
-      <Text style={styles.badgeText}>{label[status]}</Text>
+    <View style={styles.emptyWrap}>
+      <Text style={styles.emptyIcon}>🏕️</Text>
+      <Text style={styles.emptyTitle}>Wilderness First Aid</Text>
+      <Text style={styles.emptyBody}>
+        Describe the patient's symptoms and I'll help you assess and respond.
+      </Text>
+      <View style={styles.exampleWrap}>
+        {[
+          'My friend is bleeding heavily from her leg',
+          'He collapsed and is not breathing',
+          'She was stung by a bee and her throat is swelling',
+        ].map(ex => (
+          <View key={ex} style={styles.exampleChip}>
+            <Text style={styles.exampleText}>{ex}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function MessageBubble({message}: {message: ChatMessage}) {
+  if (message.role === 'user') {
+    return (
+      <View style={styles.userRow}>
+        <View style={styles.userBubble}>
+          <Text style={styles.userText}>{message.content}</Text>
+        </View>
+      </View>
+    );
+  }
+
+  const urgencyColor = message.urgency ? URGENCY_COLOR[message.urgency] : null;
+  const isEmpty = !message.content;
+
+  return (
+    <View style={styles.assistantRow}>
+      {urgencyColor && (
+        <View style={[styles.urgencyStrip, {backgroundColor: urgencyColor}]}>
+          <Text style={styles.urgencyStripText}>
+            {URGENCY_LABEL[message.urgency!] ?? message.urgency}
+          </Text>
+        </View>
+      )}
+      <View style={styles.assistantBubble}>
+        {isEmpty ? (
+          <ActivityIndicator size="small" color="#555" />
+        ) : (
+          <Markdown style={mdStyles}>{message.content}</Markdown>
+        )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: '#0f0f0f'},
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#333',
+    borderBottomWidth: 2,
+    borderBottomColor: '#2a2a2a',
   },
-  title: {color: '#fff', fontSize: 17, fontWeight: '600'},
-  badge: {borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3},
-  badgeText: {color: '#fff', fontSize: 12, fontWeight: '500'},
-  responseArea: {flex: 1, paddingHorizontal: 16},
-  responseContent: {paddingVertical: 16, flexGrow: 1},
-  placeholder: {color: '#555', fontSize: 15, fontStyle: 'italic'},
-  errorText: {color: '#f44336', fontSize: 14, marginTop: 8},
+  title: {color: '#fff', fontSize: 18, fontWeight: '700'},
+  headerRight: {flexDirection: 'row', alignItems: 'center', gap: 8},
+
+  urgencyBadge: {
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  urgencyText: {color: '#fff', fontSize: 12, fontWeight: '700'},
+
+  newBtn: {
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  newBtnText: {color: '#888', fontSize: 12},
+
+  scroll: {flex: 1},
+  scrollContent: {padding: 16, paddingBottom: 8, flexGrow: 1},
+
+  emptyWrap: {flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 40},
+  emptyIcon: {fontSize: 48, marginBottom: 16},
+  emptyTitle: {color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 8, textAlign: 'center'},
+  emptyBody: {color: '#888', fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 24},
+  exampleWrap: {width: '100%', gap: 8},
+  exampleChip: {backgroundColor: '#1a1a1a', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#2a2a2a'},
+  exampleText: {color: '#aaa', fontSize: 14},
+
+  userRow: {alignItems: 'flex-end', marginBottom: 12},
+  userBubble: {
+    backgroundColor: '#1565c0',
+    borderRadius: 16,
+    borderBottomRightRadius: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    maxWidth: '80%',
+  },
+  userText: {color: '#fff', fontSize: 15, lineHeight: 21},
+
+  assistantRow: {marginBottom: 16},
+  urgencyStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
+  urgencyStripText: {color: '#fff', fontSize: 11, fontWeight: '700'},
+  assistantBubble: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    borderTopLeftRadius: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    minHeight: 36,
+    justifyContent: 'center',
+  },
+
+  disclaimer: {
+    backgroundColor: '#111',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#2a2a2a',
+  },
+  disclaimerText: {color: '#555', fontSize: 11, textAlign: 'center'},
+
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     padding: 12,
     gap: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#333',
+    borderTopColor: '#2a2a2a',
   },
   input: {
     flex: 1,
     minHeight: 42,
     maxHeight: 120,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#1a1a1a',
     color: '#fff',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
   },
   sendBtn: {
-    backgroundColor: '#2196f3',
-    borderRadius: 10,
+    backgroundColor: '#1565c0',
+    borderRadius: 12,
     paddingHorizontal: 18,
     paddingVertical: 11,
     justifyContent: 'center',
     alignItems: 'center',
     minWidth: 66,
   },
-  sendBtnDisabled: {backgroundColor: '#1a4a6e'},
-  sendBtnText: {color: '#fff', fontWeight: '600', fontSize: 15},
+  sendBtnDisabled: {backgroundColor: '#1a2a3a'},
+  sendBtnText: {color: '#fff', fontWeight: '700', fontSize: 15},
 });
 
-const markdownStyles = StyleSheet.create({
-  body: {color: '#e0e0e0', fontSize: 15, lineHeight: 22},
-  heading1: {color: '#fff', fontSize: 22, fontWeight: '700', marginVertical: 8},
-  heading2: {color: '#fff', fontSize: 19, fontWeight: '700', marginVertical: 6},
-  heading3: {color: '#fff', fontSize: 16, fontWeight: '600', marginVertical: 4},
+const mdStyles = StyleSheet.create({
+  body: {color: '#ddd', fontSize: 15, lineHeight: 23},
+  heading1: {color: '#fff', fontSize: 20, fontWeight: '700', marginVertical: 6},
+  heading2: {color: '#fff', fontSize: 17, fontWeight: '700', marginVertical: 4},
   strong: {color: '#fff', fontWeight: '700'},
-  em: {fontStyle: 'italic'},
+  em: {fontStyle: 'italic', color: '#bbb'},
+  bullet_list: {marginVertical: 4},
+  ordered_list: {marginVertical: 4},
+  list_item: {marginVertical: 2, color: '#ddd'},
+  hr: {backgroundColor: '#333', height: 1, marginVertical: 10},
+  blockquote: {
+    backgroundColor: '#111',
+    borderLeftColor: '#f44336',
+    borderLeftWidth: 3,
+    paddingLeft: 12,
+    marginVertical: 4,
+  },
   code_inline: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#252525',
     color: '#ce9178',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     fontSize: 13,
     borderRadius: 4,
-    paddingHorizontal: 4,
   },
   fence: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#252525',
     borderRadius: 8,
     padding: 12,
     marginVertical: 8,
@@ -201,16 +355,5 @@ const markdownStyles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     fontSize: 13,
   },
-  blockquote: {
-    backgroundColor: '#1a1a1a',
-    borderLeftColor: '#2196f3',
-    borderLeftWidth: 3,
-    paddingLeft: 12,
-    marginVertical: 4,
-  },
-  bullet_list: {marginVertical: 4},
-  ordered_list: {marginVertical: 4},
-  list_item: {marginVertical: 2},
-  hr: {backgroundColor: '#333', height: 1, marginVertical: 12},
   link: {color: '#64b5f6'},
 });

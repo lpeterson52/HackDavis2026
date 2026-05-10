@@ -1,0 +1,75 @@
+{
+  "id": "burns",
+  "title": "Burns",
+  "source": "American Burn Association / American Red Cross",
+  "slides": [
+    {
+      "order": 1,
+      "type": "action",
+      "layout": "step",
+      "title": "Remove from Heat Source",
+      "content": "Move the person safely away from the heat source. Remove burned clothing and jewelry near the burn — unless clothing is stuck to the skin. Do not pull stuck fabric.",
+      "warning": "Do not remove clothing stuck to skin. Do not break blisters.",
+      "tts_text": "Move away from heat. Remove clothing and jewelry near the burn unless stuck to skin."
+    },
+    {
+      "order": 2,
+      "type": "action",
+      "layout": "step",
+      "title": "Cool the Burn",
+      "content": "Hold the burned area under cool (not cold) running water for 10–20 minutes. This is the single most important step — it reduces depth and pain.",
+      "warning": "No ice. No ice water. No butter. No toothpaste. No creams. Cool running water only. Stop if person starts shivering uncontrollably.",
+      "tts_text": "Cool with cool running water for 10 to 20 minutes. No ice. No butter. Cool water only."
+    },
+    {
+      "order": 3,
+      "type": "decision",
+      "layout": "branch",
+      "title": "Assess Burn Depth",
+      "content": "1st degree: Red, dry, painful, no blisters (like sunburn). 2nd degree: Blisters, wet/shiny, very painful. 3rd degree: White, brown, or charred, may be painless (nerve damage destroyed). Call 911 for 3rd degree or large 2nd degree burns.",
+      "decision": {
+        "first": { "next_slide": 4, "label": "1st degree — red, no blisters" },
+        "second": { "next_slide": 5, "label": "2nd degree — blisters present" },
+        "third": { "next_slide": 6, "label": "3rd degree — charred or white" }
+      },
+      "tts_text": "Assess the burn. First degree is red and painful. Second degree has blisters. Third degree is white or charred and may not hurt."
+    },
+    {
+      "order": 4,
+      "type": "action",
+      "layout": "step",
+      "title": "1st Degree — Home Care",
+      "content": "After cooling: apply aloe vera gel or unscented moisturizer. Cover loosely with a non-stick sterile dressing or clean cloth. Take OTC pain relief if needed. Seek medical care if burn is larger than 3 inches or involves face, hands, feet, genitals, or major joints.",
+      "tts_text": "After cooling, apply aloe or moisturizer. Cover loosely with a sterile dressing."
+    },
+    {
+      "order": 5,
+      "type": "action",
+      "layout": "step",
+      "title": "2nd Degree — Cover and Seek Care",
+      "content": "After cooling: cover loosely with a sterile non-stick dressing. Do not pop blisters — they protect against infection. Do not apply creams, butter, or ointment. Seek medical care for 2nd degree burns larger than 3 inches, or on face, hands, feet, genitals, or major joints.",
+      "warning": "Do not pop blisters — they are a natural barrier against infection.",
+      "tts_text": "Cover loosely with sterile dressing. Do not pop blisters. Seek medical care for larger burns."
+    },
+    {
+      "order": 6,
+      "type": "action",
+      "layout": "step",
+      "title": "3rd Degree — Call 911 Now",
+      "content": "Call 911. After cooling (if still possible): cover loosely with a cool wet sterile dressing or clean sheet. Do not remove clothing stuck to skin. Keep person warm — 3rd degree burns cause dangerous heat loss. Lay flat and monitor for shock.",
+      "warning": "3rd degree burns require emergency surgery. Do not attempt home treatment. All 3rd degree burns = 911.",
+      "tts_text": "Call 911. Cover loosely with a cool wet sterile dressing. Do not remove stuck clothing. Treat for shock."
+    },
+    {
+      "order": 7,
+      "type": "completion",
+      "layout": "done",
+      "title": "Next Steps",
+      "content": "1st degree: watch for infection signs (spreading redness, pus, fever) over next 48 hours. 2nd/3rd degree: hospital care required. All burns on face, hands, feet, genitals, or joints require physician evaluation regardless of size.",
+      "completion": {
+        "message": "Monitor the burn. Seek appropriate medical care based on severity."
+      },
+      "tts_text": "Monitor for infection. All second and third degree burns need medical care."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "seizure",
+  "name": "Seizure",
+  "urgency_floor": "ORANGE",
+  "search_tags": [
+    "seizure", "convulsion", "epilepsy", "shaking", "spasm", "fit",
+    "jerking", "twitching", "epileptic"
+  ],
+  "common_phrases": [
+    "having a seizure", "convulsions", "shaking uncontrollably", "body shaking",
+    "jerking movements", "stiffened body", "fell and started shaking",
+    "epileptic fit", "won't stop shaking", "foaming at mouth"
+  ],
+  "recognize": {
+    "signs": [
+      "Sudden loss of consciousness with convulsions",
+      "Stiffening followed by rhythmic jerking (tonic-clonic)",
+      "Unresponsive staring spell",
+      "Confusion and disorientation after episode (postictal phase)"
+    ],
+    "criteria": "Involuntary rhythmic motor activity with or without loss of consciousness"
+  }
+}

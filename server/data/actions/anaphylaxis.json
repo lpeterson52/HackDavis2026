@@ -1,0 +1,13 @@
+{
+  "id": "anaphylaxis",
+  "immediate_actions": [
+    {"step": "Inject EpiPen into outer thigh immediately (can go through clothing)", "critical": true, "note": "Hold 10 seconds, note exact time"},
+    {"step": "Call 911 — required even if EpiPen was used", "critical": true, "note": "Biphasic reactions occur in up to 20% of cases"},
+    {"step": "Lay flat with legs elevated, or sit if easier to breathe", "critical": true, "note": "Never allow standing — risk of cardiovascular collapse"},
+    {"step": "Remove stinger or exposure trigger if possible", "critical": false, "note": "Scrape bee stinger sideways — do not squeeze"}
+  ],
+  "next_steps": [
+    {"step": "Second EpiPen in opposite thigh if no improvement in 5-15 minutes", "when": "if second auto-injector available"},
+    {"step": "Begin CPR if person stops breathing", "when": "if breathing absent"}
+  ]
+}

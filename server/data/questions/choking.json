@@ -1,0 +1,52 @@
+{
+  "id": "choking",
+  "ask_next": [
+    {
+      "id": "chk_q1",
+      "priority": 1,
+      "question": "Can the person make any sound, cough, or speak at all?",
+      "purpose": "Distinguish complete from partial airway obstruction",
+      "why": "Complete obstruction is immediately life-threatening; partial can often be self-cleared",
+      "response_guides": [
+        {
+          "if_answer_contains": ["no", "nothing", "silent", "can't", "cannot", "not at all"],
+          "urgency_escalate": "RED",
+          "note": "Complete airway obstruction — begin back blows and abdominal thrusts immediately"
+        },
+        {
+          "if_answer_contains": ["yes", "a little", "coughing", "wheezing", "weakly", "some sound"],
+          "urgency_escalate": "ORANGE",
+          "note": "Partial obstruction — encourage coughing, standby to assist if worsens to silent"
+        }
+      ]
+    },
+    {
+      "id": "chk_q2",
+      "priority": 2,
+      "question": "Is the person still conscious and standing, or have they gone limp or unconscious?",
+      "purpose": "Determine if CPR transition is needed",
+      "why": "Unconscious choking requires different protocol — lower to ground and start CPR",
+      "response_guides": [
+        {
+          "if_answer_contains": ["unconscious", "passed out", "not responsive", "collapsed", "limp", "fell"],
+          "urgency_escalate": "RED",
+          "note": "Lower carefully to ground. Start CPR. Check mouth for visible object before each breath attempt."
+        }
+      ]
+    },
+    {
+      "id": "chk_q3",
+      "priority": 3,
+      "question": "What did they choke on, and how long ago did it start?",
+      "purpose": "Assess urgency and EMS information",
+      "why": "Duration and object type help EMS prepare and set priority",
+      "response_guides": [
+        {
+          "if_answer_contains": ["long time", "minutes", "5 minutes", "long", "been a while"],
+          "urgency_escalate": "RED",
+          "note": "Prolonged obstruction — hypoxia risk increasing, escalate immediately"
+        }
+      ]
+    }
+  ]
+}

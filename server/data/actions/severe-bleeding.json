@@ -1,0 +1,14 @@
+{
+  "id": "severe-bleeding",
+  "immediate_actions": [
+    {"step": "Call 911", "critical": true, "note": "Do this first; if others present, delegate"},
+    {"step": "Apply direct pressure with cloth or bandage — press firmly, do not lift", "critical": true, "note": "Add more material on top if soaked; do not remove original"},
+    {"step": "Apply tourniquet if limb wound won't stop bleeding in 5 minutes", "critical": true, "note": "2-3 inches above wound, never over joint, write time on skin"},
+    {"step": "Lay person flat, elevate legs 12 inches if no spine injury", "critical": false, "note": "Reduces shock"}
+  ],
+  "next_steps": [
+    {"step": "Keep person warm and still", "when": "while waiting for EMS"},
+    {"step": "Monitor breathing and consciousness", "when": "continuously"},
+    {"step": "Begin CPR if breathing stops", "when": "if breathing or pulse absent"}
+  ]
+}

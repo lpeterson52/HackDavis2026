@@ -1,0 +1,24 @@
+{
+  "id": "choking",
+  "name": "Choking / Airway Obstruction",
+  "urgency_floor": "RED",
+  "search_tags": [
+    "chok", "airway", "swallow", "stuck", "throat", "heimlich", "obstruction",
+    "food stuck", "can't breathe", "coughing", "gagging"
+  ],
+  "common_phrases": [
+    "something stuck in throat", "can't breathe", "choking", "swallowed wrong",
+    "food stuck", "turned blue from choking", "clutching throat",
+    "universal choking sign", "can't speak", "silent cough"
+  ],
+  "recognize": {
+    "signs": [
+      "Cannot speak, cough, or breathe",
+      "Hands to throat (universal choking sign)",
+      "High-pitched squeaking noise or completely silent",
+      "Lips or face turning blue or gray",
+      "Panic and distress"
+    ],
+    "criteria": "Severe: cannot cough forcefully, speak, or breathe. Mild: can cough — encourage coughing only."
+  }
+}

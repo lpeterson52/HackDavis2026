@@ -1,0 +1,57 @@
+{
+  "id": "cpr",
+  "ask_next": [
+    {
+      "id": "cpr_q1",
+      "priority": 1,
+      "question": "Is the person breathing at all — even gasping occasionally?",
+      "purpose": "Confirm CPR indication and identify agonal respirations",
+      "why": "Agonal gasps (occasional gasps) are not normal breathing — CPR should continue",
+      "response_guides": [
+        {
+          "if_answer_contains": ["no", "not breathing", "stopped breathing", "barely", "gasping", "occasionally"],
+          "urgency_escalate": "RED",
+          "note": "Not breathing or agonal gasps — continue CPR without pause"
+        },
+        {
+          "if_answer_contains": ["yes", "breathing", "breathing now"],
+          "urgency_escalate": "ORANGE",
+          "note": "Person has resumed breathing — stop compressions, place in recovery position, monitor closely"
+        }
+      ]
+    },
+    {
+      "id": "cpr_q2",
+      "priority": 2,
+      "question": "Is there an AED (automated defibrillator) available nearby?",
+      "purpose": "Guide AED deployment timing",
+      "why": "Early defibrillation within 3-5 minutes dramatically improves survival",
+      "response_guides": [
+        {
+          "if_answer_contains": ["yes", "nearby", "found", "have one", "coming"],
+          "urgency_escalate": "RED",
+          "note": "Use AED as soon as it arrives — apply pads, follow prompts, resume CPR immediately after shock"
+        }
+      ]
+    },
+    {
+      "id": "cpr_q3",
+      "priority": 3,
+      "question": "Do you know what caused them to collapse?",
+      "purpose": "Identify traumatic vs. cardiac arrest to adjust technique",
+      "why": "Traumatic arrest requires minimal head tilt; cardiac arrest benefits from standard protocol",
+      "response_guides": [
+        {
+          "if_answer_contains": ["trauma", "fall", "hit", "accident", "injury", "crash", "struck"],
+          "urgency_escalate": "RED",
+          "note": "Traumatic arrest — minimize cervical spine movement; use jaw thrust instead of head tilt if possible"
+        },
+        {
+          "if_answer_contains": ["drowning", "drowned", "water"],
+          "urgency_escalate": "RED",
+          "note": "Drowning cardiac arrest — give 5 rescue breaths before starting compressions (modified protocol)"
+        }
+      ]
+    }
+  ]
+}

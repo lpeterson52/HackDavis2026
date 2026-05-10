@@ -1,0 +1,77 @@
+{
+  "id": "cpr",
+  "title": "CPR (Adult)",
+  "source": "American Heart Association 2020 Guidelines",
+  "slides": [
+    {
+      "order": 1,
+      "type": "action",
+      "layout": "step",
+      "title": "Check Responsiveness",
+      "content": "Tap shoulders firmly and shout 'Are you okay?' Look, listen, and feel for normal breathing for no more than 10 seconds.",
+      "warning": "Agonal gasps (occasional gasping sounds) are NOT normal breathing — begin CPR immediately.",
+      "tts_text": "Tap shoulders and shout are you okay. Check for normal breathing for 10 seconds. Gasping is not normal breathing."
+    },
+    {
+      "order": 2,
+      "type": "action",
+      "layout": "step",
+      "title": "Call 911 and Get AED",
+      "content": "Call 911 now. Ask someone nearby to find an AED. If alone with a phone, call 911 first on speaker, then start CPR.",
+      "tts_text": "Call 911. Send someone to get an AED. Start CPR immediately."
+    },
+    {
+      "order": 3,
+      "type": "action",
+      "layout": "step",
+      "title": "Position and Open Airway",
+      "content": "Lay person on their back on a firm, flat surface. Place heel of one hand on center of chest (lower half of breastbone). Cover with second hand, fingers interlaced.",
+      "tts_text": "Lay the person on their back on a firm surface. Place hands on center of chest."
+    },
+    {
+      "order": 4,
+      "type": "action",
+      "layout": "step",
+      "title": "30 Chest Compressions",
+      "content": "Arms straight. Push down at least 2 inches (5 cm). Rate: 100–120 per minute — imagine the beat of 'Stayin' Alive.' Allow the chest to fully recoil between compressions. Count: 1-2-3...30.",
+      "warning": "Push HARD and FAST. Inadequate depth is the most common CPR error. It is okay to break ribs — that is survivable; cardiac arrest is not.",
+      "tts_text": "30 compressions. Push hard at least 2 inches. 100 to 120 per minute. Let the chest rise fully between each."
+    },
+    {
+      "order": 5,
+      "type": "action",
+      "layout": "step",
+      "title": "2 Rescue Breaths",
+      "content": "Tilt head back, lift chin. Pinch nose shut. Create a seal over mouth. Give 1 breath over 1 second — watch chest rise. Give second breath. If chest does not rise, reposition head and try once more.",
+      "warning": "If uncomfortable with rescue breaths: compression-only CPR (no breaths) is still effective and is preferred over doing nothing.",
+      "tts_text": "Tilt head back, pinch nose, seal mouth. Give 2 breaths of one second each. Watch chest rise."
+    },
+    {
+      "order": 6,
+      "type": "action",
+      "layout": "step",
+      "title": "Continue 30:2 Cycle",
+      "content": "Repeat: 30 compressions, 2 breaths. Do not stop unless: person shows clear signs of life, AED is ready, or EMS takes over. Switch compressors every 2 minutes to avoid fatigue.",
+      "tts_text": "Continue 30 compressions then 2 breaths. Switch with another person every 2 minutes."
+    },
+    {
+      "order": 7,
+      "type": "action",
+      "layout": "step",
+      "title": "Use AED When It Arrives",
+      "content": "Turn on AED and follow voice prompts exactly. Attach pads as shown on the diagrams. Do not touch person while AED analyzes. Deliver shock if advised. Resume CPR immediately after any shock — start with compressions.",
+      "tts_text": "Turn on the AED and follow voice prompts. Attach pads. Do not touch during analysis. Resume CPR immediately after shock."
+    },
+    {
+      "order": 8,
+      "type": "completion",
+      "layout": "done",
+      "title": "Keep Going Until Help Arrives",
+      "content": "You are doing the right thing. Early CPR doubles or triples survival chances. Keep going until EMS takes over.",
+      "completion": {
+        "message": "You are doing the right thing. Keep going until EMS arrives."
+      },
+      "tts_text": "Keep going. You are saving a life. Do not stop until emergency services take over."
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "id": "anaphylaxis",
+  "title": "Anaphylaxis / Severe Allergic Reaction",
+  "source": "American Academy of Allergy, Asthma & Immunology / AHA",
+  "slides": [
+    {
+      "order": 1,
+      "type": "action",
+      "layout": "step",
+      "title": "Use EpiPen Immediately",
+      "content": "If an epinephrine auto-injector (EpiPen, Auvi-Q) is available: Remove safety cap. Press firmly against the outer thigh — it can go through clothing. Hold for 10 seconds. Note the exact time of injection.",
+      "warning": "Antihistamines (Benadryl, Zyrtec) are NOT sufficient for anaphylaxis. Epinephrine is the ONLY effective first-line treatment. Do not delay for any reason.",
+      "tts_text": "Inject the EpiPen into the outer thigh immediately. Hold for 10 seconds. Note the time."
+    },
+    {
+      "order": 2,
+      "type": "action",
+      "layout": "step",
+      "title": "Call 911",
+      "content": "Call 911 immediately — even if the EpiPen was used. Epinephrine wears off in 15–20 minutes. Biphasic reactions (return of symptoms) occur in up to 20% of cases. Hospital observation is required.",
+      "tts_text": "Call 911 immediately. EpiPen buys time — emergency care is still required."
+    },
+    {
+      "order": 3,
+      "type": "action",
+      "layout": "step",
+      "title": "Position the Person",
+      "content": "Lay flat on their back with legs elevated about 12 inches. If breathing is easier sitting up, let them sit. Do not allow them to stand or walk — this can cause cardiovascular collapse.",
+      "warning": "If vomiting or unconscious: place on their side (recovery position). If not breathing and no pulse: begin CPR.",
+      "tts_text": "Lay the person flat with legs elevated. Let them sit if breathing is easier. Never let them stand."
+    },
+    {
+      "order": 4,
+      "type": "action",
+      "layout": "step",
+      "title": "Remove the Trigger",
+      "content": "If bee or wasp sting: scrape the stinger out sideways (don't squeeze — squeezing injects more venom). Remove any remaining food. Move away from chemical exposure.",
+      "tts_text": "If bee sting, scrape the stinger out. Remove any food or exposure trigger."
+    },
+    {
+      "order": 5,
+      "type": "action",
+      "layout": "step",
+      "title": "Second EpiPen if Needed",
+      "content": "If symptoms do not improve or worsen within 5–15 minutes AND a second auto-injector is available: inject into the opposite thigh.",
+      "tts_text": "If no improvement in 5 to 15 minutes and a second EpiPen is available, use it in the opposite thigh."
+    },
+    {
+      "order": 6,
+      "type": "action",
+      "layout": "step",
+      "title": "Monitor Continuously",
+      "content": "Stay with the person. Monitor breathing, consciousness, and skin color every 1–2 minutes. Be prepared to start CPR. Keep them warm if possible.",
+      "tts_text": "Stay with the person. Monitor breathing and consciousness every minute. Be ready to start CPR."
+    },
+    {
+      "order": 7,
+      "type": "completion",
+      "layout": "done",
+      "title": "Wait for EMS — Do Not Leave",
+      "content": "Do not let the person leave or drive. Even if they feel completely better, hospital evaluation is mandatory. Biphasic reactions can occur 1–72 hours later.",
+      "completion": {
+        "message": "Keep the person calm and still. EMS is on the way. Hospital care is required — do not let them go home.",
+        "next_protocol": "cpr"
+      },
+      "tts_text": "Keep the person calm and still. Emergency services are coming. Do not let them go home. Hospital care is required."
+    }
+  ]
+}

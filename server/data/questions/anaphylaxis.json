@@ -1,0 +1,57 @@
+{
+  "id": "anaphylaxis",
+  "ask_next": [
+    {
+      "id": "ana_q1",
+      "priority": 1,
+      "question": "Is there difficulty breathing, throat tightening, or wheezing?",
+      "purpose": "Confirm systemic anaphylaxis vs. isolated localized reaction",
+      "why": "Respiratory or cardiovascular involvement confirms anaphylaxis — epinephrine is required",
+      "response_guides": [
+        {
+          "if_answer_contains": ["yes", "can't breathe", "throat closing", "wheezing", "tight", "hard to breathe", "trouble breathing"],
+          "urgency_escalate": "RED",
+          "note": "Respiratory compromise confirmed — EpiPen immediately if available, call 911"
+        },
+        {
+          "if_answer_contains": ["no", "just hives", "only itching", "not breathing problems"],
+          "urgency_escalate": "ORANGE",
+          "note": "Isolated hives without respiratory symptoms — monitor closely for escalation, still seek care"
+        }
+      ]
+    },
+    {
+      "id": "ana_q2",
+      "priority": 2,
+      "question": "Do they have an EpiPen or epinephrine auto-injector available?",
+      "purpose": "Guide immediate treatment decision",
+      "why": "EpiPen is the only effective first-line treatment for anaphylaxis",
+      "response_guides": [
+        {
+          "if_answer_contains": ["yes", "have one", "found it", "in the bag", "in the pack"],
+          "urgency_escalate": "RED",
+          "note": "Use EpiPen NOW — inject outer thigh, hold 10 seconds, then call 911"
+        },
+        {
+          "if_answer_contains": ["no", "don't have", "can't find", "left it", "none"],
+          "urgency_escalate": "RED",
+          "note": "No EpiPen available — call 911 immediately, anaphylaxis cannot be managed without epinephrine"
+        }
+      ]
+    },
+    {
+      "id": "ana_q3",
+      "priority": 3,
+      "question": "What were they exposed to — food, insect sting, or a medication?",
+      "purpose": "Identify trigger for EMS notification and remove if possible",
+      "why": "EMS needs the allergen for treatment planning; some triggers need immediate removal",
+      "response_guides": [
+        {
+          "if_answer_contains": ["medication", "drug", "injection", "iv", "shot", "vaccine"],
+          "urgency_escalate": "RED",
+          "note": "Medication-induced anaphylaxis — often more severe and rapid, maximum urgency"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "severe-bleeding",
+  "name": "Severe Bleeding",
+  "urgency_floor": "RED",
+  "search_tags": [
+    "bleed", "blood", "cut", "wound", "laceration", "gash", "hemorrhage",
+    "sliced", "stabbed", "puncture", "artery", "vein"
+  ],
+  "common_phrases": [
+    "bleeding a lot", "won't stop bleeding", "blood everywhere", "deep cut",
+    "heavy bleeding", "losing blood", "bleeding badly", "blood soaking",
+    "spurting blood", "bleeding through", "can't stop the bleeding"
+  ],
+  "recognize": {
+    "signs": [
+      "Heavy blood flow soaking through bandages",
+      "Bright red pulsing blood (arterial)",
+      "Deep wound to limb, neck, or torso",
+      "Patient dizzy, pale, or confused from blood loss"
+    ],
+    "criteria": "Blood soaking through bandage in under 1 minute, or wound to major vessel area"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "id": "severe-bleeding",
+  "ask_next": [
+    {
+      "id": "sb_q1",
+      "priority": 1,
+      "question": "Where on the body is the wound?",
+      "purpose": "Location determines tourniquet eligibility and severity",
+      "why": "Neck/torso bleeds cannot be tourniqueted and are higher risk than limb bleeds",
+      "response_guides": [
+        {
+          "if_answer_contains": ["neck", "throat"],
+          "urgency_escalate": "RED",
+          "note": "Neck wound — gentle direct pressure only (no packing), call 911 immediately"
+        },
+        {
+          "if_answer_contains": ["chest", "abdomen", "stomach", "back", "torso"],
+          "urgency_escalate": "RED",
+          "note": "Torso wound — maintain firm pressure, do not pack, call 911 immediately"
+        },
+        {
+          "if_answer_contains": ["arm", "leg", "hand", "foot", "thigh", "calf", "wrist", "ankle", "shin"],
+          "urgency_escalate": "RED",
+          "note": "Limb wound — tourniquet eligible if direct pressure fails after 5 minutes"
+        },
+        {
+          "if_answer_contains": ["groin", "armpit", "shoulder junction"],
+          "urgency_escalate": "RED",
+          "note": "Junctional wound — pack tightly with gauze, cannot tourniquet, call 911 immediately"
+        }
+      ]
+    },
+    {
+      "id": "sb_q2",
+      "priority": 2,
+      "question": "Is the blood bright red and pulsing, or darker and flowing more steadily?",
+      "purpose": "Distinguish arterial from venous bleeding",
+      "why": "Arterial bleeds are more immediately life-threatening and need tourniquet faster",
+      "response_guides": [
+        {
+          "if_answer_contains": ["bright", "pulsing", "spurting", "pulsating", "gushing", "squirting"],
+          "urgency_escalate": "RED",
+          "note": "Arterial bleed suspected — maximum urgency, apply tourniquet immediately for limb wounds"
+        }
+      ]
+    },
+    {
+      "id": "sb_q3",
+      "priority": 3,
+      "question": "Has the person lost consciousness, or are they dizzy and confused?",
+      "purpose": "Detect hemorrhagic shock",
+      "why": "Altered consciousness indicates significant blood loss — hemodynamic compromise",
+      "response_guides": [
+        {
+          "if_answer_contains": ["unconscious", "passed out", "fainted", "not responding", "confused", "very dizzy", "disoriented", "pale"],
+          "urgency_escalate": "RED",
+          "note": "Signs of hemorrhagic shock — call 911, lay flat, elevate legs, keep warm"
+        }
+      ]
+    }
+  ]
+}

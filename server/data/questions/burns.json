@@ -1,0 +1,47 @@
+{
+  "id": "burns",
+  "ask_next": [
+    {
+      "id": "brn_q1",
+      "priority": 1,
+      "question": "How large is the burn — roughly what area does it cover?",
+      "purpose": "Estimate body surface area to assess severity",
+      "why": "Burns >10% body surface area or >3 inches require emergency care",
+      "response_guides": [
+        {
+          "if_answer_contains": ["large", "huge", "whole arm", "whole leg", "chest", "back", "entire", "very large", "spreading", "most of"],
+          "urgency_escalate": "RED",
+          "note": "Large burn area — call 911, risk of fluid loss, hypothermia, and infection is severe"
+        }
+      ]
+    },
+    {
+      "id": "brn_q2",
+      "priority": 2,
+      "question": "Is the burned area on the face, hands, feet, genitals, or over a major joint?",
+      "purpose": "Identify high-risk anatomic locations",
+      "why": "These locations need immediate medical evaluation regardless of burn depth",
+      "response_guides": [
+        {
+          "if_answer_contains": ["face", "hand", "foot", "feet", "genitals", "groin", "joint", "knee", "elbow", "ankle", "wrist"],
+          "urgency_escalate": "ORANGE",
+          "note": "High-risk burn location — physician evaluation required regardless of size or depth"
+        }
+      ]
+    },
+    {
+      "id": "brn_q3",
+      "priority": 3,
+      "question": "Does the burned skin look white, brown, or charred — or does it feel numb with no pain?",
+      "purpose": "Identify full-thickness (3rd degree) burns",
+      "why": "Absence of pain with white/charred appearance = nerve destruction = 3rd degree",
+      "response_guides": [
+        {
+          "if_answer_contains": ["white", "brown", "charred", "black", "numb", "can't feel", "no pain", "doesn't hurt", "leathery"],
+          "urgency_escalate": "RED",
+          "note": "3rd degree burn suspected — call 911, do not attempt home treatment"
+        }
+      ]
+    }
+  ]
+}
