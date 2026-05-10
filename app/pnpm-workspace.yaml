@@ -1,0 +1,2 @@
+patchedDependencies:
+  react-native-tts: patches/react-native-tts.patch
