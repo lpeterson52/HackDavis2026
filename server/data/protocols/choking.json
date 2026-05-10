@@ -1,0 +1,73 @@
+{
+  "id": "choking",
+  "title": "Choking (Adult / Child over 1 year)",
+  "source": "American Red Cross / AHA",
+  "slides": [
+    {
+      "order": 1,
+      "type": "decision",
+      "layout": "branch",
+      "title": "Can they cough, speak, or breathe?",
+      "content": "Ask: 'Are you choking?' If they can cough forcefully, speak, or breathe — this is a mild obstruction. Encourage coughing and observe closely.",
+      "decision": {
+        "mild": { "next_slide": 2, "label": "Yes — can cough or speak (mild)" },
+        "severe": { "next_slide": 3, "label": "No — silent, cannot breathe (severe)" }
+      },
+      "tts_text": "Can the person cough forcefully, speak, or breathe at all?"
+    },
+    {
+      "order": 2,
+      "type": "action",
+      "layout": "step",
+      "title": "Mild Choking — Encourage Coughing",
+      "content": "Encourage them to keep coughing forcefully. Stand by and watch. Do not do back blows or abdominal thrusts if they can still cough. Call 911 if obstruction does not clear within 1–2 minutes or condition worsens.",
+      "tts_text": "Encourage coughing. Do not interfere. Watch closely for the situation to worsen."
+    },
+    {
+      "order": 3,
+      "type": "action",
+      "layout": "step",
+      "title": "Call 911",
+      "content": "Call 911 immediately for severe choking. Put phone on speaker and continue helping.",
+      "tts_text": "Call 911 immediately. Put them on speaker and keep helping."
+    },
+    {
+      "order": 4,
+      "type": "action",
+      "layout": "step",
+      "title": "5 Back Blows",
+      "content": "Stand to the side and slightly behind the person. Support their chest with one hand and lean them forward. Give 5 firm blows between the shoulder blades with the heel of your other hand.",
+      "tts_text": "Give 5 firm blows between the shoulder blades with the heel of your hand."
+    },
+    {
+      "order": 5,
+      "type": "action",
+      "layout": "step",
+      "title": "5 Abdominal Thrusts (Heimlich)",
+      "content": "Stand behind person, wrap arms around their waist. Make a fist, place it thumb-side just above the navel and below the breastbone. Grip fist with other hand. Give 5 quick, firm upward-and-inward thrusts.",
+      "warning": "For pregnant persons or those with large abdomens: use chest thrusts instead — place hands on the center of the chest (breastbone).",
+      "tts_text": "Place fist just above the navel. Cover with other hand. Give 5 sharp upward thrusts."
+    },
+    {
+      "order": 6,
+      "type": "action",
+      "layout": "step",
+      "title": "Alternate and Repeat",
+      "content": "Alternate 5 back blows and 5 abdominal thrusts until object is expelled or person becomes unconscious. After each cycle, check the mouth — remove any object you can clearly see.",
+      "warning": "Never do blind finger sweeps — only remove objects you can clearly see. If person goes unconscious, lower them to the ground and start CPR.",
+      "tts_text": "Keep alternating back blows and abdominal thrusts. If person goes unconscious, start CPR."
+    },
+    {
+      "order": 7,
+      "type": "completion",
+      "layout": "done",
+      "title": "Object Cleared",
+      "content": "When object clears: reassure the person. Have them seek medical evaluation — abdominal thrusts can cause internal injury even when they work.",
+      "completion": {
+        "message": "Airway is clear. Seek medical care to check for internal injury from the thrusts.",
+        "next_protocol": "cpr"
+      },
+      "tts_text": "Airway cleared. Seek medical evaluation even if the person feels fine. The thrusts can cause internal injury."
+    }
+  ]
+}

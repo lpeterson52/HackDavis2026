@@ -1,0 +1,14 @@
+{
+  "id": "cpr",
+  "immediate_actions": [
+    {"step": "Call 911 immediately — or send someone to call while you start CPR", "critical": true, "note": "Put phone on speaker"},
+    {"step": "Send someone to find an AED", "critical": true, "note": "Do not delay CPR to search far for AED"},
+    {"step": "30 hard chest compressions at 100-120/min, at least 2 inches deep", "critical": true, "note": "Lower half of breastbone, arms straight, allow full recoil"},
+    {"step": "2 rescue breaths after every 30 compressions", "critical": false, "note": "Compression-only CPR is acceptable if untrained or uncomfortable"}
+  ],
+  "next_steps": [
+    {"step": "Switch compressors every 2 minutes", "when": "if another person is available to reduce fatigue"},
+    {"step": "Apply AED pads and follow voice prompts as soon as AED arrives", "when": "when device is available"},
+    {"step": "Resume CPR immediately after each shock", "when": "after AED delivers shock"}
+  ]
+}

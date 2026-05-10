@@ -1,0 +1,23 @@
+{
+  "id": "cpr",
+  "name": "Cardiac Arrest / Unresponsive",
+  "urgency_floor": "RED",
+  "search_tags": [
+    "cpr", "cardiac", "heart attack", "unconscious", "unresponsive", "not breathing",
+    "no pulse", "collapsed", "heart stopped", "resuscitation", "defibrillator", "aed"
+  ],
+  "common_phrases": [
+    "not breathing", "no pulse", "unconscious", "collapsed", "heart stopped",
+    "not responding", "passed out won't wake up", "turned blue", "agonal breathing",
+    "gasping", "stopped breathing", "no heartbeat"
+  ],
+  "recognize": {
+    "signs": [
+      "Unresponsive — does not react to voice or sternal rub",
+      "Absent or abnormal breathing (agonal gasps count as absent)",
+      "No detectable pulse at carotid artery for 10 seconds",
+      "Blue or gray lips/fingernails (cyanosis)"
+    ],
+    "criteria": "Unresponsive AND not breathing normally"
+  }
+}

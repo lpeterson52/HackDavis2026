@@ -1,0 +1,10 @@
+{
+  "conditions": [
+    "severe-bleeding",
+    "cpr",
+    "choking",
+    "anaphylaxis",
+    "seizure",
+    "burns"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "burns",
+  "immediate_actions": [
+    {"step": "Remove from heat source and remove clothing/jewelry near burn (unless stuck)", "critical": true, "note": "Do not pull fabric stuck to skin"},
+    {"step": "Cool with cool running water for 10-20 minutes", "critical": true, "note": "No ice, no butter, no creams — water only"},
+    {"step": "Call 911 for 3rd degree burns or large 2nd degree burns", "critical": true, "note": "Large = >3 inches, or face/hands/feet/genitals/joints"},
+    {"step": "Cover loosely with sterile dressing after cooling", "critical": false, "note": "Do not pop blisters"}
+  ],
+  "next_steps": [
+    {"step": "Monitor for infection: spreading redness, pus, fever", "when": "hours to days after the burn"},
+    {"step": "Physician evaluation for all 2nd and 3rd degree burns", "when": "as soon as possible"}
+  ]
+}

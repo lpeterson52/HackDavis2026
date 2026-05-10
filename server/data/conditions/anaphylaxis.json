@@ -1,0 +1,25 @@
+{
+  "id": "anaphylaxis",
+  "name": "Anaphylaxis / Severe Allergic Reaction",
+  "urgency_floor": "RED",
+  "search_tags": [
+    "allerg", "anaphylaxis", "epipen", "epinephrine", "bee", "sting", "peanut",
+    "hives", "swelling", "throat closing", "allergic", "reaction"
+  ],
+  "common_phrases": [
+    "allergic reaction", "throat closing", "throat swelling", "can't swallow",
+    "hives spreading", "epipen", "bee sting", "peanut allergy", "face swelling",
+    "whole body reaction", "lips swelling", "trouble breathing after eating",
+    "anaphylaxis", "anaphylactic"
+  ],
+  "recognize": {
+    "signs": [
+      "Hives, widespread itching, or flushed skin",
+      "Swelling of face, lips, tongue, or throat",
+      "Difficulty breathing or wheezing",
+      "Dizziness or fainting (drop in blood pressure)",
+      "Rapid weak pulse"
+    ],
+    "criteria": "Allergic exposure PLUS breathing difficulty, throat swelling, or cardiovascular symptoms"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "id": "seizure",
+  "title": "Seizure",
+  "source": "Epilepsy Foundation / American Red Cross",
+  "slides": [
+    {
+      "order": 1,
+      "type": "action",
+      "layout": "step",
+      "title": "Time the Seizure",
+      "content": "Note the exact start time. A seizure lasting more than 5 minutes is status epilepticus — a life-threatening emergency. Call 911 if: first ever seizure, duration exceeds 5 minutes, person does not regain consciousness, injury occurred, or another seizure follows.",
+      "warning": "When in doubt, call 911. You cannot overdose on calling for help.",
+      "tts_text": "Note the start time now. Call 911 if the seizure lasts more than 5 minutes."
+    },
+    {
+      "order": 2,
+      "type": "action",
+      "layout": "step",
+      "title": "Protect from Injury",
+      "content": "Clear the immediate area of hard or sharp objects. Cushion the head with something soft (folded jacket, bag). Remove glasses if worn. Loosen tight clothing around the neck.",
+      "tts_text": "Clear the area. Cushion the head. Remove glasses. Loosen any tight clothing around the neck."
+    },
+    {
+      "order": 3,
+      "type": "action",
+      "layout": "step",
+      "title": "What NOT to Do",
+      "content": "Do NOT hold the person down or try to restrain their movements. Do NOT put anything in their mouth — they cannot swallow their tongue (this is a myth). Do NOT give water or food. Do NOT leave them alone.",
+      "warning": "Restraining a seizure can cause fractures or dislocations. Putting objects in the mouth risks broken teeth and injury to you both.",
+      "tts_text": "Do not restrain the person. Do not put anything in their mouth. Do not give food or water. Stay with them."
+    },
+    {
+      "order": 4,
+      "type": "action",
+      "layout": "step",
+      "title": "Recovery Position When Shaking Stops",
+      "content": "Once convulsions stop: gently roll the person onto their side (recovery position). This keeps the airway clear and prevents aspiration if they vomit. Place top knee forward to stabilize.",
+      "tts_text": "Once shaking stops, gently roll the person onto their side. This keeps the airway clear."
+    },
+    {
+      "order": 5,
+      "type": "action",
+      "layout": "step",
+      "title": "Check Breathing",
+      "content": "Confirm they are breathing normally. Look, listen, and feel. If not breathing after convulsions stop, begin CPR immediately.",
+      "warning": "Do not attempt rescue breathing during active convulsions — only after.",
+      "tts_text": "Check for normal breathing. If not breathing after the seizure ends, begin CPR."
+    },
+    {
+      "order": 6,
+      "type": "completion",
+      "layout": "done",
+      "title": "Recovery Phase",
+      "content": "Confusion and disorientation for 5–30 minutes after a seizure is normal (postictal phase). Speak calmly and reassure them. Tell them what happened. Do not offer food or water until fully alert. Do not allow them to drive.",
+      "completion": {
+        "message": "Stay calm. Stay with them through the recovery. Do not let them drive.",
+        "next_protocol": "cpr"
+      },
+      "tts_text": "Speak calmly. Confusion after a seizure is normal. Stay until fully recovered. Do not let them drive."
+    }
+  ]
+}

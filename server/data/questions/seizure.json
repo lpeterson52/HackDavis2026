@@ -1,0 +1,52 @@
+{
+  "id": "seizure",
+  "ask_next": [
+    {
+      "id": "sz_q1",
+      "priority": 1,
+      "question": "How long has the seizure been going on?",
+      "purpose": "Detect status epilepticus (seizure lasting over 5 minutes)",
+      "why": "Seizures >5 minutes = status epilepticus, a life-threatening neurological emergency",
+      "response_guides": [
+        {
+          "if_answer_contains": ["5 minutes", "6", "7", "8", "9", "10", "more than 5", "over 5", "still going", "won't stop", "long time"],
+          "urgency_escalate": "RED",
+          "note": "Possible status epilepticus — call 911 immediately"
+        }
+      ]
+    },
+    {
+      "id": "sz_q2",
+      "priority": 2,
+      "question": "Has this person had seizures before, or is this the first time?",
+      "purpose": "Determine if known epileptic with a rescue medication plan",
+      "why": "First seizures always require 911; known epileptics may have Diastat or other rescue medication",
+      "response_guides": [
+        {
+          "if_answer_contains": ["first", "never before", "first time", "don't know", "not sure"],
+          "urgency_escalate": "RED",
+          "note": "First or unknown seizure — call 911 regardless of duration"
+        },
+        {
+          "if_answer_contains": ["has them", "epileptic", "epilepsy", "before", "has a history", "diagnosed"],
+          "urgency_escalate": "ORANGE",
+          "note": "Known epileptic — follow their seizure action plan if available, call 911 if >5 min or unusual"
+        }
+      ]
+    },
+    {
+      "id": "sz_q3",
+      "priority": 3,
+      "question": "Is the person breathing now that the shaking has stopped?",
+      "purpose": "Detect post-ictal respiratory arrest",
+      "why": "Respiratory arrest can follow tonic-clonic seizures and requires immediate CPR",
+      "response_guides": [
+        {
+          "if_answer_contains": ["no", "not breathing", "stopped breathing", "doesn't seem to be breathing"],
+          "urgency_escalate": "RED",
+          "note": "Respiratory arrest post-seizure — begin CPR immediately, call 911"
+        }
+      ]
+    }
+  ]
+}

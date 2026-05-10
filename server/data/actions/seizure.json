@@ -1,0 +1,15 @@
+{
+  "id": "seizure",
+  "immediate_actions": [
+    {"step": "Note the start time of the seizure", "critical": true, "note": ">5 min = status epilepticus, call 911 immediately"},
+    {"step": "Clear area of hazards and cushion head", "critical": true, "note": "Remove sharp or hard objects nearby"},
+    {"step": "Do NOT restrain movements or put anything in the mouth", "critical": true, "note": "Restraining causes fractures; tongue-swallowing is a myth"},
+    {"step": "Call 911 if: first seizure, >5 min, injury occurred, no regained consciousness", "critical": true, "note": "When in doubt, call"}
+  ],
+  "next_steps": [
+    {"step": "Roll to recovery position (on side) once convulsions stop", "when": "immediately after shaking ends"},
+    {"step": "Check for normal breathing", "when": "immediately after convulsions end"},
+    {"step": "Begin CPR if not breathing after convulsions stop", "when": "if breathing absent"},
+    {"step": "Stay through postictal confusion — up to 30 minutes is normal", "when": "after seizure ends"}
+  ]
+}
