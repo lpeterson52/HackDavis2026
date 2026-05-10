@@ -19,3 +19,7 @@ app/*.keystore
 
 # OS
 .DS_Store
+
+gradle.*
+build.gradle
+gradle*
