@@ -268,7 +268,7 @@ function MessageBubble({message}: {message: ChatMessage}) {
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: '#0f0f0f', paddingTop: 45},
+  root: {flex: 1, backgroundColor: '#0f0f0f', paddingTop: 45, paddingBottom: 45},
 
   header: {
     flexDirection: 'row',
