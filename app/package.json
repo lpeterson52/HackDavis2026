@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@react-native-voice/voice": "^3.2.4",
-    
     "react": "19.2.3",
     "react-native": "0.85.3",
     "react-native-markdown-display": "^7.0.2",

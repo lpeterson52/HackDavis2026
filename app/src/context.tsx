@@ -96,6 +96,7 @@ export function AppProvider({children}: {children: ReactNode}) {
   return (
     <AppContext.Provider
       value={{
+      messages,
         messages,
         sessionState,
         currentUrgency,

@@ -19,7 +19,7 @@ import Tts from 'react-native-tts';
 import {streamChat} from '../api';
 import {ChatMessage, useAppContext} from '../context';
 
-type HandsFreePhase = 'idle' | 'listening' | 'thinking' | 'speaking';
+import HandsFreeVoiceOverlay, {HandsFreePhase} from './HandsFreeVoiceOverlay';
 
 const URGENCY_COLOR: Record<string, string> = {
   RED: '#f44336',
@@ -49,7 +49,6 @@ export default function ChatScreen() {
 
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [handsFree, setHandsFree] = useState(false);
   const [hfPhase, setHfPhase] = useState<HandsFreePhase>('idle');
@@ -62,9 +61,15 @@ export default function ChatScreen() {
   // Latest voice transcript — avoids stale-state race between onSpeechResults and onSpeechEnd.
   const transcriptRef = useRef('');
 
+  // Hands-free overlay mirrors streamed assistant text for the current turn.
+  const [hfAssistantText, setHfAssistantText] = useState('');
+
   useEffect(() => {
     handsFreeRef.current = handsFree;
-    if (!handsFree) setHfPhase('idle');
+    if (!handsFree) {
+      setHfPhase('idle');
+  setHfAssistantText('');
+    }
   }, [handsFree]);
 
   useEffect(() => {
@@ -80,12 +85,10 @@ export default function ChatScreen() {
       }
     };
     Voice.onSpeechEnd = () => {
-      setIsListening(false);
       // Small delay so onSpeechResults state update settles before send reads it.
       setTimeout(() => sendRef.current?.(), 80);
     };
     Voice.onSpeechError = (e: SpeechErrorEvent) => {
-      setIsListening(false);
       if (handsFreeRef.current) {
         // Transient noise — re-arm instead of surfacing an error.
         setTimeout(() => startListening(), 500);
@@ -94,23 +97,25 @@ export default function ChatScreen() {
       }
     };
 
-    const ttsFinish = Tts.addEventListener('tts-finish', () => {
+  const ttsFinish = Tts.addEventListener('tts-finish', () => {
       if (handsFreeRef.current) {
         setHfPhase('listening');
-        startListening();
+  startListening();
       }
     });
-    const ttsCancel = Tts.addEventListener('tts-cancel', () => {
+  const ttsCancel = Tts.addEventListener('tts-cancel', () => {
       if (handsFreeRef.current) {
         setHfPhase('listening');
-        startListening();
+  startListening();
       }
     });
 
     return () => {
       Voice.destroy().then(Voice.removeAllListeners);
-      ttsFinish.remove();
-      ttsCancel.remove();
+  // react-native-tts has differed across versions: sometimes returns a subscription,
+  // sometimes returns void. Guard so TypeScript is happy.
+  (ttsFinish as any)?.remove?.();
+  (ttsCancel as any)?.remove?.();
     };
   }, []);
 
@@ -120,19 +125,9 @@ export default function ChatScreen() {
     transcriptRef.current = '';
     try {
       await Voice.start('en-US');
-      setIsListening(true);
       setHfPhase('listening');
     } catch {
       setVoiceError('Microphone unavailable — type instead');
-    }
-  }
-
-  async function toggleListening() {
-    if (isListening) {
-      await Voice.stop();
-      setIsListening(false);
-    } else {
-      await startListening();
     }
   }
 
@@ -140,11 +135,11 @@ export default function ChatScreen() {
     const next = !handsFree;
     setHandsFree(next);
     if (next) {
+  setHfAssistantText('');
       startListening();
     } else {
       Voice.stop().catch(() => {});
       Tts.stop();
-      setIsListening(false);
     }
   }
 
@@ -161,12 +156,19 @@ export default function ChatScreen() {
     setStreaming(true);
     streamingRef.current = true;
     if (handsFreeRef.current) setHfPhase('thinking');
+
     appendUserMessage(text);
     const assistantId = startAssistantMessage();
+
+  // Mirror streamed assistant text onto overlay in hands-free mode.
+  if (handsFreeRef.current) setHfAssistantText('');
 
     try {
       const meta = await streamChat(text, sessionState, history, token => {
         appendToMessage(assistantId, token);
+        if (handsFreeRef.current) {
+      setHfAssistantText(prev => prev + token);
+        }
         scrollRef.current?.scrollToEnd({animated: false});
       });
       finalizeMessage(assistantId, meta);
@@ -181,6 +183,7 @@ export default function ChatScreen() {
       }
     } catch (e: any) {
       appendToMessage(assistantId, `_Error: ${e.message}_`);
+    if (handsFreeRef.current) setHfAssistantText(`Error: ${e.message}`);
       if (handsFreeRef.current) {
         setHfPhase('listening');
         startListening();
@@ -251,9 +254,22 @@ export default function ChatScreen() {
       )}
 
       {/* Hands-free phase indicator */}
-      {handsFree && (
-        <HandsFreeBar phase={hfPhase} onStop={toggleHandsFree} />
-      )}
+      {handsFree && <HandsFreeBar phase={hfPhase} onStop={toggleHandsFree} />}
+
+      <HandsFreeVoiceOverlay
+        enabled={handsFree}
+        streaming={streaming}
+        phase={hfPhase}
+        setPhase={setHfPhase}
+        onExit={toggleHandsFree}
+        onSend={async (text: string) => {
+          setInput(text);
+          transcriptRef.current = text;
+          await send();
+        }}
+        assistantText={hfAssistantText}
+        onVoiceError={setVoiceError}
+      />
 
       {/* Input row — hidden in hands-free mode */}
       {!handsFree && (
@@ -270,10 +286,21 @@ export default function ChatScreen() {
             onSubmitEditing={send}
           />
           <Pressable
-            style={[styles.micBtn, isListening && styles.micBtnActive, streaming && styles.micBtnDisabled]}
-            onPress={toggleListening}
+            style={[
+              styles.micBtn,
+              handsFree && styles.micBtnActive,
+              streaming && styles.micBtnDisabled,
+            ]}
+            onPress={toggleHandsFree}
             disabled={streaming}>
-            <Text style={styles.micBtnText}>{isListening ? '🔴' : '🎙️'}</Text>
+            {/* <MaterialIcons
+              name={isListening ? 'stop' : 'mic'}
+              size={20}
+              color={isListening ? '#f44336' : '#ddd'}
+            /> */}
+            <View style={styles.micBtnInner}>
+              <Text style={styles.micBtnText}>{handsFree ? '⏹️' : '🎤'}</Text>
+            </View>
           </Pressable>
           <Pressable
             style={[styles.sendBtn, (streaming || !input.trim()) && styles.sendBtnDisabled]}
@@ -286,13 +313,6 @@ export default function ChatScreen() {
             )}
           </Pressable>
         </View>
-      )}
-
-      {/* Hands-free activation strip */}
-      {!handsFree && (
-        <Pressable style={styles.hfActivateBtn} onPress={toggleHandsFree}>
-          <Text style={styles.hfActivateText}>🎙 Go Hands-Free</Text>
-        </Pressable>
       )}
     </KeyboardAvoidingView>
   );
@@ -518,7 +538,7 @@ const styles = StyleSheet.create({
 
   micBtn: {
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
+    borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 11,
     justifyContent: 'center',
@@ -529,7 +549,9 @@ const styles = StyleSheet.create({
   },
   micBtnActive: {borderColor: '#f44336', backgroundColor: '#2a0a0a'},
   micBtnDisabled: {opacity: 0.4},
-  micBtnText: {fontSize: 18},
+  micBtnInner: {alignItems: 'center', gap: 2},
+  micBtnText: {fontSize: 18, lineHeight: 18, color: '#fff'},
+  micBtnLabel: {color: '#bbb', fontSize: 10, fontWeight: '700'},
 
   voiceErrorBanner: {
     backgroundColor: '#2a1500',
@@ -540,14 +562,6 @@ const styles = StyleSheet.create({
   },
   voiceErrorText: {color: '#ff9800', fontSize: 12, textAlign: 'center'},
 
-  hfActivateBtn: {
-    alignItems: 'center',
-    paddingVertical: 8,
-    backgroundColor: '#0d1a2a',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#1565c0',
-  },
-  hfActivateText: {color: '#1e88e5', fontSize: 13, fontWeight: '600'},
 });
 
 const mdStyles = StyleSheet.create({
