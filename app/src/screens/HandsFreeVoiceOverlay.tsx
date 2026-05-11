@@ -35,7 +35,7 @@ export type HandsFreeVoiceOverlayProps = {
 };
 
 const HF_PHASE_CONFIG: Record<HandsFreePhase, {label: string; color: string; icon: string}> = {
-  idle: {label: 'Hands-Free Off', color: '#333', icon: '🎙️'},
+  idle: {label: 'Hands-Free Mode', color: '#333', icon: '🎙️'},
   listening: {label: 'Listening…', color: '#1565c0', icon: '👂'},
   thinking: {label: 'Thinking…', color: '#6a1b9a', icon: '🧠'},
   speaking: {label: 'Speaking…', color: '#2e7d32', icon: '🔊'},
@@ -229,7 +229,9 @@ export default function HandsFreeVoiceOverlay({
               style={voiceOverlayStyles.closeBtn}
               accessibilityRole="button"
               accessibilityLabel="Close voice mode"
-            />
+              >
+                <Text> '✖️' </Text>
+            </Pressable>
           </View>
 
           <View style={voiceOverlayStyles.transcriptWrap}>
